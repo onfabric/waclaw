@@ -5,6 +5,6 @@ import { logger } from '#/lib/logger.ts';
 
 runMigrations();
 
-createApp().listen(env.port);
+const { server } = createApp().listen({ port: env.port, hostname: '0.0.0.0' });
 
-logger.info(`[waclaw] listening on http://localhost:${env.port}`);
+logger.info(`[waclaw] listening on ${server!.url.origin}`);
