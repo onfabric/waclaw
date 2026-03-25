@@ -9,5 +9,8 @@
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "elysia": "^1.4.28"
   }
 }
