@@ -1,12 +1,11 @@
 import { Elysia } from 'elysia';
 import { PollQuerySchema } from '#/routes/poll/model.ts';
-import type { PollService } from '#/services/poll.service.ts';
-import type { RouteService } from '#/services/route.service.ts';
+import type { ServicesPlugin } from '#/services/plugin.ts';
 
-export function createRoute(routeService: RouteService, pollService: PollService) {
-  return new Elysia().get(
+export function createRoute(services: ServicesPlugin) {
+  return new Elysia().use(services).get(
     '/poll',
-    async ({ query }) => {
+    async ({ query, routeService, pollService }) => {
       routeService.getByConnectorToken({ connectorToken: query.token });
       const result = await pollService.park({ connectorToken: query.token, timeoutMs: 30_000 });
       return result ?? { message: null };

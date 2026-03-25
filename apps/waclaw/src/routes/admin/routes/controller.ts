@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia';
 import { env } from '#/lib/env.ts';
 import { AdminRouteBodySchema, AuthHeaderSchema } from '#/routes/admin/routes/model.ts';
-import type { RouteService } from '#/services/route.service.ts';
+import type { ServicesPlugin } from '#/services/plugin.ts';
 
 const adminAuth = new Elysia({ name: 'Admin.Auth' }).macro({
   isAdmin: {
@@ -15,19 +15,23 @@ const adminAuth = new Elysia({ name: 'Admin.Auth' }).macro({
   },
 });
 
-export function createRoute(routeService: RouteService) {
+export function createRoute(services: ServicesPlugin) {
   return new Elysia({ prefix: '/admin/routes' })
+    .use(services)
     .use(adminAuth)
-    .get('/', () => routeService.list(), { headers: AuthHeaderSchema, isAdmin: true })
+    .get('/', ({ routeService }) => routeService.list(), {
+      headers: AuthHeaderSchema,
+      isAdmin: true,
+    })
     .post(
       '/',
-      ({ body }) =>
+      ({ body, routeService }) =>
         routeService.create({ phoneNumberId: body.phone_number_id, waToken: body.wa_token }),
       { body: AdminRouteBodySchema, headers: AuthHeaderSchema, isAdmin: true },
     )
     .delete(
       '/:token',
-      ({ params }) => {
+      ({ params, routeService }) => {
         routeService.delete({ connectorToken: params.token });
         return new Response(null, { status: 204 });
       },

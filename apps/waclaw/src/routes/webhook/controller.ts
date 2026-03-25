@@ -3,10 +3,11 @@ import { env } from '#/lib/env.ts';
 import { BadRequestError, UnauthorizedError } from '#/lib/errors.ts';
 import { verifyMetaSignature } from '#/lib/signature.ts';
 import type { MetaWebhookPayload } from '#/routes/webhook/model.ts';
-import type { MessageService } from '#/services/message.service.ts';
+import type { ServicesPlugin } from '#/services/plugin.ts';
 
-export function createRoute(messageService: MessageService) {
+export function createRoute(services: ServicesPlugin) {
   return new Elysia()
+    .use(services)
     .get('/webhook', ({ query }) => {
       const q = query as Record<string, string | undefined>;
 
@@ -18,7 +19,7 @@ export function createRoute(messageService: MessageService) {
       }
       return new Response(q['hub.challenge'], { status: 200 });
     })
-    .post('/webhook', async ({ request }) => {
+    .post('/webhook', async ({ request, messageService }) => {
       const rawBody = await request.text();
       const signature = request.headers.get('x-hub-signature-256');
 

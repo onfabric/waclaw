@@ -1,6 +1,6 @@
 import { Elysia } from 'elysia';
-import type { HealthService } from '#/services/health.service.ts';
+import type { ServicesPlugin } from '#/services/plugin.ts';
 
-export function createRoute(healthService: HealthService) {
-  return new Elysia().get('/health', () => healthService.check());
+export function createRoute(services: ServicesPlugin) {
+  return new Elysia().use(services).get('/health', ({ healthService }) => healthService.check());
 }
