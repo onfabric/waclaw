@@ -1,0 +1,28 @@
+{
+  "name": "waclaw-monorepo",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "bun run --bun turbo build",
+    "check:types": "bun run --bun turbo check:types",
+    "check:codestyle": "bun run --bun biome check",
+    "check:all": "bun check:types && bun check:codestyle",
+    "fix:codestyle": "bun run --bun biome check --write",
+    "check:commit-message": "bun run --bun commitlint"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.8",
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "@commitlint/format": "^20.5.0",
+    "@commitlint/types": "^20.5.0",
+    "@types/bun": "latest",
+    "turbo": "^2.8.20",
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "bun@1.3.11"
+}
