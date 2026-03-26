@@ -1,15 +1,26 @@
 {
   "id": "waclaw",
-  "name": "waclaw",
-  "description": "Send and receive messages from WhatsApp Business API",
+  "kind": "channel",
+  "channels": ["waclaw"],
+  "name": "WhatsApp (waclaw)",
+  "description": "WhatsApp channel plugin via waclaw proxy",
   "configSchema": {
     "type": "object",
-    "required": [],
     "additionalProperties": false,
     "properties": {
-      "relayToken": {
-        "type": "string",
-        "description": "Token for the waclaw proxy relay"
+      "waclaw": {
+        "type": "object",
+        "properties": {
+          "connectorToken": {
+            "type": "string",
+            "description": "Connector token from the waclaw proxy admin API"
+          },
+          "allowFrom": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Phone numbers allowed to message the bot"
+          }
+        }
       }
     }
   }

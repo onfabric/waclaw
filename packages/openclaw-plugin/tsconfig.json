@@ -1,9 +1,9 @@
 {
   "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
-    "rootDir": "./src",
+    "rootDir": ".",
     "outDir": "dist"
   },
-  "include": ["src"],
+  "include": ["src", "index.ts", "setup-entry.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -13,7 +13,13 @@
   "openclaw": {
     "extensions": [
       "./dist/index.js"
-    ]
+    ],
+    "setupEntry": "./dist/setup-entry.js",
+    "channel": {
+      "id": "waclaw",
+      "label": "WhatsApp (waclaw)",
+      "blurb": "Connect OpenClaw to WhatsApp via the waclaw proxy."
+    }
   },
   "files": [
     "dist/*",
@@ -26,7 +32,7 @@
     "#*": "./src/*"
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target bun",
+    "build": "bun build index.ts setup-entry.ts --outdir dist --target bun --external openclaw",
     "check:types": "bun run --bun tsc"
   },
   "dependencies": {
