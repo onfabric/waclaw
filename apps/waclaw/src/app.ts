@@ -1,4 +1,5 @@
 import { Elysia } from 'elysia';
+import { env } from '#lib/env.ts';
 import { elysiaErrorHandler } from '#lib/errors.ts';
 import { adminRoutesController } from '#routes/admin/routes/controller.ts';
 import { healthController } from '#routes/health/controller.ts';
@@ -7,7 +8,18 @@ import { replyController } from '#routes/reply/controller.ts';
 import { webhookController } from '#routes/webhook/controller.ts';
 
 export function createApp() {
-  return new Elysia()
+  return new Elysia({
+    serve: {
+      ...(env.httpsCertPath && env.httpsKeyPath
+        ? {
+            tls: {
+              cert: Bun.file(env.httpsCertPath),
+              key: Bun.file(env.httpsKeyPath),
+            },
+          }
+        : {}),
+    },
+  })
     .onError(elysiaErrorHandler)
     .use(healthController)
     .use(webhookController)
