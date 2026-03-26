@@ -1,9 +1,13 @@
-import { Elysia } from 'elysia';
+import { Elysia, StatusMap } from 'elysia';
 import { env } from '#lib/env.ts';
 import { BadRequestError, UnauthorizedError } from '#lib/errors.ts';
 import { verifyMetaSignature } from '#lib/signature.ts';
 import type { MetaWebhookPayload } from '#routes/webhook/model.ts';
-import { WebhookVerifyQuerySchema } from '#routes/webhook/model.ts';
+import {
+  WebhookResponseSchema,
+  WebhookVerifyQuerySchema,
+  WebhookVerifyResponseSchema,
+} from '#routes/webhook/model.ts';
 import { LoggerPlugin, WebhookServicePlugin } from '#services/plugins.ts';
 
 export const webhookController = new Elysia()
@@ -11,7 +15,7 @@ export const webhookController = new Elysia()
   .use(WebhookServicePlugin)
   .get(
     '/webhook',
-    ({ query, logger }) => {
+    ({ query, logger, status }) => {
       logger.info('Query:', query);
 
       if (
@@ -23,27 +27,36 @@ export const webhookController = new Elysia()
       if (!query['hub.challenge']) {
         throw new BadRequestError('Missing hub.challenge');
       }
-      return new Response(query['hub.challenge'], { status: 200 });
+      return status(StatusMap.OK, query['hub.challenge']);
     },
-    { query: WebhookVerifyQuerySchema },
+    {
+      query: WebhookVerifyQuerySchema,
+      response: { [StatusMap.OK]: WebhookVerifyResponseSchema },
+    },
   )
-  .post('/webhook', async ({ request, webhookService, logger }) => {
-    const rawBody = await request.text();
-    const signature = request.headers.get('x-hub-signature-256');
+  .post(
+    '/webhook',
+    async ({ request, webhookService, logger, status }) => {
+      const rawBody = await request.text();
+      const signature = request.headers.get('x-hub-signature-256');
 
-    if (!verifyMetaSignature(rawBody, signature, env.metaAppSecret)) {
-      logger.error('Webhook signature verification failed');
-      throw new UnauthorizedError('Invalid webhook signature');
-    }
+      if (!verifyMetaSignature(rawBody, signature, env.metaAppSecret)) {
+        logger.error('Webhook signature verification failed');
+        throw new UnauthorizedError('Invalid webhook signature');
+      }
 
-    let payload: MetaWebhookPayload;
-    try {
-      payload = JSON.parse(rawBody);
-    } catch {
-      throw new BadRequestError('Invalid JSON body');
-    }
+      let payload: MetaWebhookPayload;
+      try {
+        payload = JSON.parse(rawBody);
+      } catch {
+        throw new BadRequestError('Invalid JSON body');
+      }
 
-    await webhookService.processIncomingPayload(payload);
+      await webhookService.processIncomingPayload(payload);
 
-    return new Response(null, { status: 200 });
-  });
+      return status(StatusMap.OK, null);
+    },
+    {
+      response: { [StatusMap.OK]: WebhookResponseSchema },
+    },
+  );
