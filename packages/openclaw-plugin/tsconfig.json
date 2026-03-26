@@ -4,6 +4,6 @@
     "rootDir": ".",
     "outDir": "dist"
   },
-  "include": ["src", "index.ts", "setup-entry.ts"],
+  "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }

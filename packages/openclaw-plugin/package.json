@@ -32,7 +32,7 @@
     "#*": "./src/*"
   },
   "scripts": {
-    "build": "bun build index.ts setup-entry.ts --outdir dist --target bun --external openclaw",
+    "build": "bun build src/index.ts src/setup-entry.ts --outdir dist --target bun --external openclaw",
     "check:types": "bun run --bun tsc"
   },
   "dependencies": {
