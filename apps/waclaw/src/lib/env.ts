@@ -6,6 +6,8 @@ declare global {
       readonly ADMIN_TOKEN?: string;
       readonly PORT?: string;
       readonly DATABASE_PATH?: string;
+      readonly HTTPS_CERT_PATH?: string;
+      readonly HTTPS_KEY_PATH?: string;
     }
   }
 }
@@ -16,6 +18,8 @@ type Env = {
   adminToken: string;
   port: number;
   databasePath: string;
+  httpsCertPath?: string;
+  httpsKeyPath?: string;
 };
 
 function loadEnv(): Env {
@@ -32,6 +36,8 @@ function loadEnv(): Env {
     adminToken: process.env.ADMIN_TOKEN!,
     port: process.env.PORT ? Number(process.env.PORT) : 3000,
     databasePath: process.env.DATABASE_PATH ?? './data/relay.db',
+    httpsCertPath: process.env.HTTPS_CERT_PATH,
+    httpsKeyPath: process.env.HTTPS_KEY_PATH,
   };
 }
 
