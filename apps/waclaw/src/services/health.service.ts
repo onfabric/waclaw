@@ -9,7 +9,7 @@ export class HealthService extends Service {
     this.healthRepo = healthRepo;
   }
 
-  check(): { status: string; uptime: number } {
+  check(): { status: 'ok'; uptime: number } {
     this.healthRepo.ping();
     return { status: 'ok', uptime: process.uptime() };
   }
