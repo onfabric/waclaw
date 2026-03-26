@@ -1,5 +1,5 @@
-import { createChannelPluginBase, createChatChannelPlugin } from 'openclaw/plugin-sdk/core';
 import type { ChannelSetupWizard } from 'openclaw/plugin-sdk/channel-setup';
+import { createChannelPluginBase, createChatChannelPlugin } from 'openclaw/plugin-sdk/core';
 import { sendReply, type WaclawClient } from '#client.ts';
 import {
   applyAccountConfig,
@@ -8,7 +8,6 @@ import {
   inspectAccount,
   listAccountIds,
   resolveAccount,
-  type WaclawAccount,
 } from '#config.ts';
 
 let _client: WaclawClient | undefined;
@@ -18,7 +17,9 @@ export function setClient(client: WaclawClient) {
 }
 
 function getClient(): WaclawClient {
-  if (!_client) throw new Error('waclaw: client not initialized');
+  if (!_client) {
+    throw new Error('waclaw: client not initialized');
+  }
   return _client;
 }
 
@@ -72,9 +73,8 @@ const base = createChannelPluginBase({
   setupWizard,
 });
 
-export const waclawPlugin = createChatChannelPlugin<WaclawAccount>({
+export const waclawPlugin = createChatChannelPlugin({
   base: { ...base, capabilities: base.capabilities!, config: base.config! },
-
   security: {
     dm: {
       channelKey: CHANNEL_ID,
@@ -83,9 +83,7 @@ export const waclawPlugin = createChatChannelPlugin<WaclawAccount>({
       defaultPolicy: 'allowlist',
     },
   },
-
   threading: { topLevelReplyToMode: 'reply' },
-
   outbound: {
     base: {
       deliveryMode: 'direct',
@@ -95,11 +93,13 @@ export const waclawPlugin = createChatChannelPlugin<WaclawAccount>({
       sendText: async (ctx) => {
         const account = resolveAccount(ctx.cfg, ctx.accountId);
         const messageId = crypto.randomUUID();
+
         await sendReply(getClient(), {
           connectorToken: account.connectorToken,
           text: ctx.text,
           messageId,
         });
+
         return { messageId };
       },
     },

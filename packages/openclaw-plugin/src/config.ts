@@ -5,26 +5,34 @@ import type { OpenClawConfig } from 'openclaw/plugin-sdk/core';
  */
 export const CHANNEL_ID = 'waclaw';
 
-export type WaclawAccount = {
+type WaclawAccount = {
   accountId: string | null;
   connectorToken: string;
   allowFrom: string[];
   dmPolicy: string | undefined;
 };
 
-export function getChannelSection(cfg: OpenClawConfig): Record<string, any> | undefined {
-  return (cfg.channels as Record<string, any>)?.[CHANNEL_ID];
+type WaclawChannelConfig = {
+  connectorToken: string;
+  allowFrom: string[];
+  dmPolicy: string | undefined;
+};
+
+export function getChannelSection(cfg: OpenClawConfig): WaclawChannelConfig | undefined {
+  return cfg.channels?.[CHANNEL_ID];
 }
 
 export function resolveAccount(cfg: OpenClawConfig, accountId?: string | null): WaclawAccount {
   const section = getChannelSection(cfg);
   const connectorToken = section?.connectorToken;
-  if (!connectorToken) throw new Error('waclaw: connectorToken is required');
+  if (!connectorToken) {
+    throw new Error('waclaw: connectorToken is required');
+  }
   return {
     accountId: accountId ?? null,
     connectorToken,
-    allowFrom: section?.allowFrom ?? [],
-    dmPolicy: section?.dmSecurity,
+    allowFrom: section.allowFrom ?? [],
+    dmPolicy: section.dmPolicy,
   };
 }
 
@@ -53,11 +61,16 @@ export function applyAccountConfig({
   accountId: string;
   input: { token?: string; dmAllowlist?: string[] };
 }): OpenClawConfig {
-  const next = structuredClone(cfg) as any;
+  const next = structuredClone(cfg);
   next.channels ??= {};
   next.channels[CHANNEL_ID] ??= {};
+
   const section = next.channels[CHANNEL_ID];
-  if (input.token) section.connectorToken = input.token;
-  if (input.dmAllowlist) section.allowFrom = input.dmAllowlist;
+  if (input.token) {
+    section.connectorToken = input.token;
+  }
+  if (input.dmAllowlist) {
+    section.allowFrom = input.dmAllowlist;
+  }
   return next;
 }
