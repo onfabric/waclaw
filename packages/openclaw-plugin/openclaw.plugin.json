@@ -8,19 +8,9 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "waclaw": {
-        "type": "object",
-        "properties": {
-          "connectorToken": {
-            "type": "string",
-            "description": "Connector token from the waclaw proxy admin API"
-          },
-          "allowFrom": {
-            "type": "array",
-            "items": { "type": "string" },
-            "description": "Phone numbers allowed to message the bot"
-          }
-        }
+      "connectorToken": {
+        "type": "string",
+        "description": "Connector token from the waclaw proxy admin API"
       }
     }
   }
