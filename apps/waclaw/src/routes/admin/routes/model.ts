@@ -1,12 +1,22 @@
-import { type Static, t } from 'elysia';
+import { t } from 'elysia';
 
-export const AdminRouteBodySchema = t.Object({
+const RouteResponseSchema = t.Object({
+  id: t.String({ format: 'uuid' }),
+  sender_phone: t.String({ minLength: 1 }),
+  connector_token: t.String({ minLength: 1 }),
+  created_at: t.Number({ minimum: 0 }),
+});
+
+export const ListAdminRoutesResponseSchema = t.Array(RouteResponseSchema);
+
+export const CreateAdminRouteBodySchema = t.Object({
   sender_phone: t.String({ minLength: 1 }),
 });
+
+export const CreateAdminRouteResponseSchema = RouteResponseSchema;
+
+export const DeleteAdminRouteResponseSchema = t.Null();
 
 export const AuthHeaderSchema = t.Object({
   authorization: t.String({ minLength: 1 }),
 });
-
-export type AdminRouteBody = Static<typeof AdminRouteBodySchema>;
-export type AuthHeader = Static<typeof AuthHeaderSchema>;

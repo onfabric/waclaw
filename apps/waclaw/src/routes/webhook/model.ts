@@ -6,6 +6,10 @@ export const WebhookVerifyQuerySchema = t.Object({
   'hub.challenge': t.Optional(t.String()),
 });
 
+export const WebhookVerifyResponseSchema = t.String({ minLength: 1 });
+
+export const WebhookResponseSchema = t.Null();
+
 /**
  * No body schema: body must be read raw for HMAC verification before parsing.
  * Elysia would parse the body before the handler runs, losing the raw bytes

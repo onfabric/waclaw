@@ -1,6 +1,12 @@
-import { Elysia } from 'elysia';
+import { Elysia, StatusMap } from 'elysia';
 import { env } from '#lib/env.ts';
-import { AdminRouteBodySchema, AuthHeaderSchema } from '#routes/admin/routes/model.ts';
+import {
+  AuthHeaderSchema,
+  CreateAdminRouteBodySchema,
+  CreateAdminRouteResponseSchema,
+  DeleteAdminRouteResponseSchema,
+  ListAdminRoutesResponseSchema,
+} from '#routes/admin/routes/model.ts';
 import { LoggerPlugin, RouteServicePlugin } from '#services/plugins.ts';
 
 const adminAuth = new Elysia({ name: 'Admin.Auth' }).macro({
@@ -19,20 +25,46 @@ export const adminRoutesController = new Elysia({ prefix: '/admin/routes' })
   .use(LoggerPlugin)
   .use(RouteServicePlugin)
   .use(adminAuth)
-  .get('/', ({ routeService }) => routeService.list(), {
-    headers: AuthHeaderSchema,
-    isAdmin: true,
-  })
-  .post('/', ({ body, routeService }) => routeService.create({ senderPhone: body.sender_phone }), {
-    body: AdminRouteBodySchema,
-    headers: AuthHeaderSchema,
-    isAdmin: true,
-  })
+  .get(
+    '/',
+    ({ routeService, status }) => {
+      const routes = routeService.list();
+      return status(StatusMap.OK, routes);
+    },
+    {
+      headers: AuthHeaderSchema,
+      isAdmin: true,
+      response: {
+        [StatusMap.OK]: ListAdminRoutesResponseSchema,
+      },
+    },
+  )
+  .post(
+    '/',
+    ({ body, routeService, status }) => {
+      const route = routeService.create({ senderPhone: body.sender_phone });
+      return status(StatusMap.OK, route);
+    },
+    {
+      body: CreateAdminRouteBodySchema,
+      headers: AuthHeaderSchema,
+      response: {
+        [StatusMap.OK]: CreateAdminRouteResponseSchema,
+      },
+      isAdmin: true,
+    },
+  )
   .delete(
     '/:token',
-    ({ params, routeService }) => {
+    ({ params, routeService, status }) => {
       routeService.delete({ connectorToken: params.token });
-      return new Response(null, { status: 204 });
+      return status(StatusMap['No Content'], null);
     },
-    { headers: AuthHeaderSchema, isAdmin: true },
+    {
+      headers: AuthHeaderSchema,
+      isAdmin: true,
+      response: {
+        [StatusMap['No Content']]: DeleteAdminRouteResponseSchema,
+      },
+    },
   );
