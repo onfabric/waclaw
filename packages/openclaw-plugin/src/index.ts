@@ -16,6 +16,9 @@ export default definePluginEntry({
     }
 
     const client = createWaclawClient('http://localhost:3000');
+    client('/health', { method: 'GET' }).then((res) => {
+      api.logger.info(`waclaw: health check: ${res.data?.status} (${res.data?.uptime}s)`);
+    });
 
     api.logger.info('waclaw: registered plugin');
   },
