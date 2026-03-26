@@ -16,7 +16,7 @@ export default defineChannelPluginEntry({
       return;
     }
 
-    createRuntime();
+    createRuntime(api.runtime);
     const runtime = getRuntime();
 
     const service = createWaclawService(runtime);

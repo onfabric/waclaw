@@ -1,6 +1,5 @@
 import type { ChannelSetupWizard } from 'openclaw/plugin-sdk/channel-setup';
 import { createChannelPluginBase, createChatChannelPlugin } from 'openclaw/plugin-sdk/core';
-import { sendReply, type WaclawClient } from '#client.ts';
 import {
   applyAccountConfig,
   CHANNEL_ID,
@@ -9,19 +8,7 @@ import {
   listAccountIds,
   resolveAccount,
 } from '#config.ts';
-
-let _client: WaclawClient | undefined;
-
-export function setClient(client: WaclawClient) {
-  _client = client;
-}
-
-function getClient(): WaclawClient {
-  if (!_client) {
-    throw new Error('waclaw: client not initialized');
-  }
-  return _client;
-}
+import { getRuntime } from '#runtime.ts';
 
 const setupWizard: ChannelSetupWizard = {
   channel: CHANNEL_ID,
@@ -91,14 +78,22 @@ export const waclawPlugin = createChatChannelPlugin({
     attachedResults: {
       channel: CHANNEL_ID,
       sendText: async (ctx) => {
+        const runtime = getRuntime();
         const account = resolveAccount(ctx.cfg, ctx.accountId);
         const messageId = crypto.randomUUID();
 
-        await sendReply(getClient(), {
-          connectorToken: account.connectorToken,
-          text: ctx.text,
-          messageId,
+        const res = await runtime.client('/reply', {
+          method: 'POST',
+          body: {
+            connector_token: account.connectorToken,
+            text: ctx.text,
+            message_id: messageId,
+          },
         });
+
+        if (res.error) {
+          throw new Error(`waclaw reply failed: ${String(res.error)}`);
+        }
 
         return { messageId };
       },

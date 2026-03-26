@@ -1,8 +1,10 @@
+import { dispatchInboundDirectDmWithRuntime } from 'openclaw/plugin-sdk/channel-inbound';
 import type { OpenClawPluginService, OpenClawPluginServiceContext } from 'openclaw/plugin-sdk/core';
-import { resolveAccount } from '#config.ts';
+import { CHANNEL_ID, resolveAccount } from '#config.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
 const POLL_ERROR_RETRY_INTERVAL_MS = 5000;
+const CHANNEL_LABEL = 'WhatsApp (waclaw)';
 
 export function createWaclawService(runtime: WaclawRuntime): OpenClawPluginService {
   return {
@@ -20,6 +22,7 @@ export function createWaclawService(runtime: WaclawRuntime): OpenClawPluginServi
 
 async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContext) {
   const account = resolveAccount(ctx.config);
+  const accountId = account.accountId ?? 'default';
   const connectorToken = account.connectorToken;
   if (!connectorToken) {
     throw new Error('waclaw: connectorToken not found');
@@ -27,14 +30,47 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
 
   while (!runtime.isStopped) {
     try {
-      const msg = await runtime.client('/poll', { query: { token: connectorToken } });
-      if (msg.error) {
-        throw new Error(`waclaw poll failed: ${String(msg.error)}`);
+      const { data, error } = await runtime.client('/poll', { query: { token: connectorToken } });
+      if (error) {
+        throw new Error(`waclaw poll failed: ${String(error)}`);
       }
-      ctx.logger.info(`waclaw: received message from ${msg.data?.sender_phone}`);
-      // TODO: dispatch inbound message to OpenClaw via the channel inbound pipeline.
-      // See bundled channel plugins (extensions/msteams, extensions/googlechat)
-      // and the ChannelGatewayAdapter.startAccount pattern for real examples.
+      if (!data) {
+        throw new Error('waclaw: poll response data is null');
+      }
+      ctx.logger.info(`waclaw: received message from ${data.sender_phone}`);
+
+      await dispatchInboundDirectDmWithRuntime({
+        cfg: ctx.config,
+        runtime: runtime.pluginRuntime,
+        channel: CHANNEL_ID,
+        channelLabel: CHANNEL_LABEL,
+        accountId,
+        peer: { kind: 'direct', id: data.sender_phone },
+        senderId: data.sender_phone,
+        senderAddress: data.sender_phone,
+        recipientAddress: accountId,
+        conversationLabel: data.sender_phone,
+        rawBody: data.body,
+        messageId: data.wa_message_id,
+        deliver: async (payload) => {
+          if (payload.text) {
+            const { error } = await runtime.client('/reply', {
+              method: 'POST',
+              body: {
+                connector_token: connectorToken,
+                text: payload.text,
+                message_id: data.wa_message_id,
+              },
+            });
+            if (error) {
+              throw new Error(`waclaw reply failed: ${String(error)}`);
+            }
+          }
+        },
+        onRecordError: (err) => ctx.logger.error(`waclaw: session record error: ${err}`),
+        onDispatchError: (err, info) =>
+          ctx.logger.error(`waclaw: dispatch error [${info.kind}]: ${err}`),
+      });
     } catch (err) {
       ctx.logger.error(`waclaw: poll error: ${err}`);
       await new Promise((resolve) => setTimeout(resolve, POLL_ERROR_RETRY_INTERVAL_MS));
