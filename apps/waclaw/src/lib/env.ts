@@ -27,7 +27,13 @@ type Env = {
 };
 
 function loadEnv(): Env {
-  const required = ['META_APP_SECRET', 'META_PHONE_NUMBER_ID', 'META_ACCESS_TOKEN', 'WEBHOOK_VERIFY_TOKEN', 'ADMIN_TOKEN'] as const;
+  const required = [
+    'META_APP_SECRET',
+    'META_PHONE_NUMBER_ID',
+    'META_ACCESS_TOKEN',
+    'WEBHOOK_VERIFY_TOKEN',
+    'ADMIN_TOKEN',
+  ] as const;
   const missing = required.filter((k) => !process.env[k]);
 
   if (missing.length > 0) {

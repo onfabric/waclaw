@@ -23,12 +23,11 @@ export const adminRoutesController = new Elysia({ prefix: '/admin/routes' })
     headers: AuthHeaderSchema,
     isAdmin: true,
   })
-  .post(
-    '/',
-    ({ body, routeService }) =>
-      routeService.create({ senderPhone: body.sender_phone }),
-    { body: AdminRouteBodySchema, headers: AuthHeaderSchema, isAdmin: true },
-  )
+  .post('/', ({ body, routeService }) => routeService.create({ senderPhone: body.sender_phone }), {
+    body: AdminRouteBodySchema,
+    headers: AuthHeaderSchema,
+    isAdmin: true,
+  })
   .delete(
     '/:token',
     ({ params, routeService }) => {

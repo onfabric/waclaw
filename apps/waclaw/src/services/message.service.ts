@@ -35,7 +35,9 @@ export class MessageService extends Service {
       return;
     }
 
-    logger.info(`Incoming message from=${senderPhone} wa_message_id=${waMessageId} connector_token=${route.connector_token}`);
+    logger.info(
+      `Incoming message from=${senderPhone} wa_message_id=${waMessageId} connector_token=${route.connector_token}`,
+    );
 
     const delivered = this.pollService.deliver({
       connectorToken: route.connector_token,

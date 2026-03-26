@@ -27,7 +27,12 @@ export class RouteService extends Service {
     const id = Bun.randomUUIDv7();
     const connectorToken = crypto.randomUUID();
     this.routeRepo.create({ id, connectorToken, senderPhone });
-    return { id, connector_token: connectorToken, sender_phone: senderPhone, created_at: Math.floor(Date.now() / 1000) };
+    return {
+      id,
+      connector_token: connectorToken,
+      sender_phone: senderPhone,
+      created_at: Math.floor(Date.now() / 1000),
+    };
   }
 
   delete({ connectorToken }: { connectorToken: string }): void {

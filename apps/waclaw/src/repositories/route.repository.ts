@@ -32,7 +32,15 @@ export class RouteRepository extends Repository {
     return this.stmtGetBySenderPhone.get(senderPhone);
   }
 
-  create({ id, connectorToken, senderPhone }: { id: string; connectorToken: string; senderPhone: string }): void {
+  create({
+    id,
+    connectorToken,
+    senderPhone,
+  }: {
+    id: string;
+    connectorToken: string;
+    senderPhone: string;
+  }): void {
     this.stmtCreate.run(id, connectorToken, senderPhone);
   }
 
