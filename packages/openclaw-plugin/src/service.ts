@@ -32,10 +32,14 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
     try {
       const { data, error } = await runtime.client('/poll', { query: { token: connectorToken } });
       if (error) {
-        throw new Error(`waclaw poll failed: ${String(error)}`);
+        throw new Error(`waclaw poll failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
       }
-      if (!data) {
-        throw new Error('waclaw: poll response data is null');
+      if (data == null) {
+        continue;
+      }
+      if (!data.sender_phone) {
+        ctx.logger.warn(`waclaw: received message with missing sender_phone, skipping`);
+        continue;
       }
       ctx.logger.info(`waclaw: received message from ${data.sender_phone}`);
 
@@ -63,7 +67,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
               },
             });
             if (error) {
-              throw new Error(`waclaw reply failed: ${String(error)}`);
+              throw new Error(`waclaw reply failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
             }
           }
         },

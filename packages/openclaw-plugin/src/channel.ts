@@ -92,7 +92,7 @@ export const waclawPlugin = createChatChannelPlugin({
         });
 
         if (res.error) {
-          throw new Error(`waclaw reply failed: ${String(res.error)}`);
+          throw new Error(`waclaw reply failed: ${res.error instanceof Error ? res.error.message : JSON.stringify(res.error)}`);
         }
 
         return { messageId };
