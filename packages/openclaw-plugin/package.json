@@ -1,0 +1,36 @@
+{
+  "name": "@onfabric/waclaw-plugin",
+  "description": "Send and receive messages from WhatsApp Business API",
+  "version": "0.0.1",
+  "author": "Fabric Developers <developers@onfabric.io>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/onfabric/waclaw",
+    "directory": "packages/openclaw-plugin"
+  },
+  "license": "MIT",
+  "type": "module",
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ]
+  },
+  "files": [
+    "dist/*",
+    "package.json",
+    "openclaw.plugin.json",
+    "README.md",
+    "../../LICENSE"
+  ],
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "check:types": "bun run --bun tsc"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.1.29"
+  }
+}
