@@ -1,7 +1,7 @@
 import { defineChannelPluginEntry } from 'openclaw/plugin-sdk/core';
 import { setClient, waclawPlugin } from '#channel.ts';
 import { createWaclawClient, healthCheck, pollMessage, type WaclawClient } from '#client.ts';
-import { CHANNEL_ID, resolveAccount } from '#config.ts';
+import { CHANNEL_ID, getChannelSection, resolveAccount } from '#config.ts';
 
 export default defineChannelPluginEntry({
   id: CHANNEL_ID,
@@ -10,6 +10,11 @@ export default defineChannelPluginEntry({
   plugin: waclawPlugin,
 
   registerFull(api) {
+    if (!getChannelSection(api.config)?.connectorToken) {
+      api.logger.info('waclaw: no connectorToken configured, skipping runtime setup');
+      return;
+    }
+
     const account = resolveAccount(api.config);
     const client = createWaclawClient();
     setClient(client);

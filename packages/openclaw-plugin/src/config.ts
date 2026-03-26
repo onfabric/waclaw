@@ -12,7 +12,7 @@ export type WaclawAccount = {
   dmPolicy: string | undefined;
 };
 
-function getChannelSection(cfg: OpenClawConfig): Record<string, any> | undefined {
+export function getChannelSection(cfg: OpenClawConfig): Record<string, any> | undefined {
   return (cfg.channels as Record<string, any>)?.[CHANNEL_ID];
 }
 

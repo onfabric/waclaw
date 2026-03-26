@@ -1,8 +1,10 @@
 import { createChannelPluginBase, createChatChannelPlugin } from 'openclaw/plugin-sdk/core';
+import type { ChannelSetupWizard } from 'openclaw/plugin-sdk/channel-setup';
 import { sendReply, type WaclawClient } from '#client.ts';
 import {
   applyAccountConfig,
   CHANNEL_ID,
+  getChannelSection,
   inspectAccount,
   listAccountIds,
   resolveAccount,
@@ -19,6 +21,33 @@ function getClient(): WaclawClient {
   if (!_client) throw new Error('waclaw: client not initialized');
   return _client;
 }
+
+const setupWizard: ChannelSetupWizard = {
+  channel: CHANNEL_ID,
+  status: {
+    configuredLabel: 'Connected to waclaw proxy',
+    unconfiguredLabel: 'Not configured',
+    resolveConfigured: ({ cfg }) => Boolean(getChannelSection(cfg)?.connectorToken),
+  },
+  credentials: [
+    {
+      inputKey: 'token',
+      providerHint: CHANNEL_ID,
+      credentialLabel: 'Connector token',
+      preferredEnvVar: 'WACLAW_CONNECTOR_TOKEN',
+      envPrompt: 'Use WACLAW_CONNECTOR_TOKEN from environment?',
+      keepPrompt: 'Keep current connector token?',
+      inputPrompt: 'Enter your waclaw connector token (from POST /admin/routes):',
+      inspect: ({ cfg }) => {
+        const token = getChannelSection(cfg)?.connectorToken;
+        return {
+          accountConfigured: Boolean(token),
+          hasConfiguredValue: Boolean(token),
+        };
+      },
+    },
+  ],
+};
 
 const base = createChannelPluginBase({
   id: CHANNEL_ID,
@@ -40,6 +69,7 @@ const base = createChannelPluginBase({
   setup: {
     applyAccountConfig,
   },
+  setupWizard,
 });
 
 export const waclawPlugin = createChatChannelPlugin<WaclawAccount>({
