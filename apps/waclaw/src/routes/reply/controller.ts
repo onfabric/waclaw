@@ -11,8 +11,7 @@ export const replyController = new Elysia()
     async ({ body, routeService, whatsappService }) => {
       const route = routeService.getByConnectorToken({ connectorToken: body.connector_token });
       await whatsappService.sendText({
-        phoneNumberId: route.phone_number_id,
-        to: body.sender_phone,
+        to: route.sender_phone,
         text: body.text,
       });
       return new Response(null, { status: 200 });

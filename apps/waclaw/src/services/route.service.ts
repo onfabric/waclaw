@@ -19,20 +19,15 @@ export class RouteService extends Service {
     return route;
   }
 
-  getByPhoneNumberId({ phoneNumberId }: { phoneNumberId: string }): Route | null {
-    return this.routeRepo.getByPhoneNumberId({ phoneNumberId });
+  getBySenderPhone({ senderPhone }: { senderPhone: string }): Route | null {
+    return this.routeRepo.getBySenderPhone({ senderPhone });
   }
 
-  create({ phoneNumberId }: { phoneNumberId: string }): Route {
+  create({ senderPhone }: { senderPhone: string }): Route {
     const id = Bun.randomUUIDv7();
     const connectorToken = crypto.randomUUID();
-    this.routeRepo.create({ id, connectorToken, phoneNumberId });
-    return {
-      id,
-      connector_token: connectorToken,
-      phone_number_id: phoneNumberId,
-      created_at: Math.floor(Date.now() / 1000),
-    };
+    this.routeRepo.create({ id, connectorToken, senderPhone });
+    return { id, connector_token: connectorToken, sender_phone: senderPhone, created_at: Math.floor(Date.now() / 1000) };
   }
 
   delete({ connectorToken }: { connectorToken: string }): void {

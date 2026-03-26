@@ -5,15 +5,12 @@ import { Service } from '#services/service.ts';
 export class WhatsAppService extends Service {
   private readonly client = new WhatsAppClient();
 
-  async sendText({
-    phoneNumberId,
-    to,
-    text,
-  }: {
-    phoneNumberId: string;
-    to: string;
-    text: string;
-  }): Promise<void> {
-    await this.client.sendText({ phoneNumberId, waToken: env.metaAccessToken, to, text });
+  async sendText({ to, text }: { to: string; text: string }): Promise<void> {
+    await this.client.sendText({
+      phoneNumberId: env.metaPhoneNumberId,
+      waToken: env.metaAccessToken,
+      to,
+      text,
+    });
   }
 }

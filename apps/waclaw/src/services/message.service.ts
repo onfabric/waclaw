@@ -21,19 +21,17 @@ export class MessageService extends Service {
   }
 
   async handleIncoming({
-    phoneNumberId,
     waMessageId,
     senderPhone,
     body,
   }: {
-    phoneNumberId: string;
     waMessageId: string;
     senderPhone: string;
     body: string;
   }): Promise<void> {
-    const route = this.routeService.getByPhoneNumberId({ phoneNumberId });
+    const route = this.routeService.getBySenderPhone({ senderPhone });
     if (!route) {
-      logger.warn(`No route for phone_number_id=${phoneNumberId}`);
+      logger.warn(`No route for sender_phone=${senderPhone}`);
       return;
     }
 

@@ -4,7 +4,7 @@ import { Repository } from '#repositories/repository.ts';
 
 export class RouteRepository extends Repository {
   private readonly stmtGetByConnectorToken: Statement<Route, [string]>;
-  private readonly stmtGetByPhoneNumberId: Statement<Route, [string]>;
+  private readonly stmtGetBySenderPhone: Statement<Route, [string]>;
   private readonly stmtCreate: Statement<void, [string, string, string]>;
   private readonly stmtDelete: Statement<void, [string]>;
   private readonly stmtList: Statement<Route, []>;
@@ -14,11 +14,11 @@ export class RouteRepository extends Repository {
     this.stmtGetByConnectorToken = db.query<Route, [string]>(
       'SELECT * FROM routes WHERE connector_token = ?',
     );
-    this.stmtGetByPhoneNumberId = db.query<Route, [string]>(
-      'SELECT * FROM routes WHERE phone_number_id = ?',
+    this.stmtGetBySenderPhone = db.query<Route, [string]>(
+      'SELECT * FROM routes WHERE sender_phone = ?',
     );
     this.stmtCreate = db.query<void, [string, string, string]>(
-      'INSERT OR REPLACE INTO routes (id, connector_token, phone_number_id) VALUES (?, ?, ?)',
+      'INSERT OR REPLACE INTO routes (id, connector_token, sender_phone) VALUES (?, ?, ?)',
     );
     this.stmtDelete = db.query<void, [string]>('DELETE FROM routes WHERE connector_token = ?');
     this.stmtList = db.query<Route, []>('SELECT * FROM routes');
@@ -28,20 +28,12 @@ export class RouteRepository extends Repository {
     return this.stmtGetByConnectorToken.get(connectorToken);
   }
 
-  getByPhoneNumberId({ phoneNumberId }: { phoneNumberId: string }): Route | null {
-    return this.stmtGetByPhoneNumberId.get(phoneNumberId);
+  getBySenderPhone({ senderPhone }: { senderPhone: string }): Route | null {
+    return this.stmtGetBySenderPhone.get(senderPhone);
   }
 
-  create({
-    id,
-    connectorToken,
-    phoneNumberId,
-  }: {
-    id: string;
-    connectorToken: string;
-    phoneNumberId: string;
-  }): void {
-    this.stmtCreate.run(id, connectorToken, phoneNumberId);
+  create({ id, connectorToken, senderPhone }: { id: string; connectorToken: string; senderPhone: string }): void {
+    this.stmtCreate.run(id, connectorToken, senderPhone);
   }
 
   delete({ connectorToken }: { connectorToken: string }): void {

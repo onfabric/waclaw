@@ -1,7 +1,7 @@
 import { type Static, t } from 'elysia';
 
 export const AdminRouteBodySchema = t.Object({
-  phone_number_id: t.String({ minLength: 1 }),
+  sender_phone: t.String({ minLength: 1 }),
 });
 
 export const AuthHeaderSchema = t.Object({
