@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { db } from '#/db/client.ts';
-import { logger } from '#/lib/logger.ts';
+import { db } from '#db/client.ts';
+import { logger } from '#lib/logger.ts';
 
 const migrationsDir = join(dirname(fileURLToPath(import.meta.url)), 'migrations');
 

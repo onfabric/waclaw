@@ -1,7 +1,7 @@
-import type { Route } from '#/db/types.ts';
-import { NotFoundError } from '#/lib/errors.ts';
-import type { RouteRepository } from '#/repositories/route.repository.ts';
-import { Service } from '#/services/service.ts';
+import type { Route } from '#db/types.ts';
+import { NotFoundError } from '#lib/errors.ts';
+import type { RouteRepository } from '#repositories/route.repository.ts';
+import { Service } from '#services/service.ts';
 
 export type RedactedRoute = Omit<Route, 'wa_token'> & { wa_token: '[redacted]' };
 

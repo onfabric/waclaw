@@ -1,4 +1,4 @@
-import { Repository } from '#/repositories/repository.ts';
+import { Repository } from '#repositories/repository.ts';
 
 export class HealthRepository extends Repository {
   ping(): void {

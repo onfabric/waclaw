@@ -1,15 +1,15 @@
 import { Elysia } from 'elysia';
-import { db } from '#/db/client.ts';
-import { logger } from '#/lib/logger.ts';
-import { HealthRepository } from '#/repositories/health.repository.ts';
-import { MessageRepository } from '#/repositories/message.repository.ts';
-import { RouteRepository } from '#/repositories/route.repository.ts';
-import { HealthService } from '#/services/health.service.ts';
-import { MessageService } from '#/services/message.service.ts';
-import { PollService } from '#/services/poll.service.ts';
-import { RouteService } from '#/services/route.service.ts';
-import { WebhookService } from '#/services/webhook.service.ts';
-import { WhatsAppService } from '#/services/whatsapp.service.ts';
+import { db } from '#db/client.ts';
+import { logger } from '#lib/logger.ts';
+import { HealthRepository } from '#repositories/health.repository.ts';
+import { MessageRepository } from '#repositories/message.repository.ts';
+import { RouteRepository } from '#repositories/route.repository.ts';
+import { HealthService } from '#services/health.service.ts';
+import { MessageService } from '#services/message.service.ts';
+import { PollService } from '#services/poll.service.ts';
+import { RouteService } from '#services/route.service.ts';
+import { WebhookService } from '#services/webhook.service.ts';
+import { WhatsAppService } from '#services/whatsapp.service.ts';
 
 // Repositories
 const routeRepo = new RouteRepository(db);

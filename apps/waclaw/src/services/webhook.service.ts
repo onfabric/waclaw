@@ -1,6 +1,6 @@
-import type { MetaWebhookPayload } from '#/routes/webhook/model.ts';
-import type { MessageService } from '#/services/message.service.ts';
-import { Service } from '#/services/service.ts';
+import type { MetaWebhookPayload } from '#routes/webhook/model.ts';
+import type { MessageService } from '#services/message.service.ts';
+import { Service } from '#services/service.ts';
 
 export class WebhookService extends Service {
   private readonly messageService: MessageService;

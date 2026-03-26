@@ -1,6 +1,6 @@
 import { Elysia } from 'elysia';
-import { ReplyBodySchema } from '#/routes/reply/model.ts';
-import { LoggerPlugin, RouteServicePlugin, WhatsAppServicePlugin } from '#/services/plugins.ts';
+import { ReplyBodySchema } from '#routes/reply/model.ts';
+import { LoggerPlugin, RouteServicePlugin, WhatsAppServicePlugin } from '#services/plugins.ts';
 
 export const replyController = new Elysia()
   .use(LoggerPlugin)

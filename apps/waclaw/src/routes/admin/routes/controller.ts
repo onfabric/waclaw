@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia';
-import { env } from '#/lib/env.ts';
-import { AdminRouteBodySchema, AuthHeaderSchema } from '#/routes/admin/routes/model.ts';
-import { LoggerPlugin, RouteServicePlugin } from '#/services/plugins.ts';
+import { env } from '#lib/env.ts';
+import { AdminRouteBodySchema, AuthHeaderSchema } from '#routes/admin/routes/model.ts';
+import { LoggerPlugin, RouteServicePlugin } from '#services/plugins.ts';
 
 const adminAuth = new Elysia({ name: 'Admin.Auth' }).macro({
   isAdmin: {

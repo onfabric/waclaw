@@ -2,6 +2,12 @@
   "name": "@repo/waclaw",
   "private": true,
   "type": "module",
+  "exports": {
+    "./app": "./src/app.ts"
+  },
+  "imports": {
+    "#*": "./src/*"
+  },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target bun",
     "check:types": "bun run --bun tsc"

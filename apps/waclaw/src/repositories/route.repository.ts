@@ -1,6 +1,6 @@
 import type { Database, Statement } from 'bun:sqlite';
-import type { Route } from '#/db/types.ts';
-import { Repository } from '#/repositories/repository.ts';
+import type { Route } from '#db/types.ts';
+import { Repository } from '#repositories/repository.ts';
 
 export class RouteRepository extends Repository {
   private readonly stmtGetByConnectorToken: Statement<Route, [string]>;

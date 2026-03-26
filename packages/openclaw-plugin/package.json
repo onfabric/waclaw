@@ -22,12 +22,19 @@
     "README.md",
     "../../LICENSE"
   ],
+  "imports": {
+    "#*": "./src/*"
+  },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target bun",
     "check:types": "bun run --bun tsc"
   },
+  "dependencies": {
+    "@elysiajs/eden": "^1.4.8"
+  },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
+    "@repo/waclaw": "workspace:*",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {

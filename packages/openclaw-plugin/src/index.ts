@@ -1,5 +1,6 @@
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
-import { configSchema, PLUGIN_ID, parseConfig } from '#/config';
+import { createWaclawClient } from '#client.ts';
+import { configSchema, PLUGIN_ID, parseConfig } from '#config.ts';
 
 export default definePluginEntry({
   id: PLUGIN_ID,
@@ -13,6 +14,8 @@ export default definePluginEntry({
       api.logger.error('waclaw: relayToken is required');
       return;
     }
+
+    const client = createWaclawClient('http://localhost:3000');
 
     api.logger.info('waclaw: registered plugin');
   },

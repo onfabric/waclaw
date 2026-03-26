@@ -1,5 +1,5 @@
 import type { ErrorHandler } from 'elysia';
-import { logger } from '#/lib/logger.ts';
+import { logger } from '#lib/logger.ts';
 
 export class AppError extends Error {
   readonly statusCode: number;

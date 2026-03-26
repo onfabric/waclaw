@@ -1,4 +1,4 @@
-import { BadGatewayError } from '#/lib/errors.ts';
+import { BadGatewayError } from '#lib/errors.ts';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v19.0';
 

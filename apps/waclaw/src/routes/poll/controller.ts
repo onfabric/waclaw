@@ -1,6 +1,6 @@
 import { Elysia } from 'elysia';
-import { PollQuerySchema } from '#/routes/poll/model.ts';
-import { LoggerPlugin, PollServicePlugin, RouteServicePlugin } from '#/services/plugins.ts';
+import { PollQuerySchema } from '#routes/poll/model.ts';
+import { LoggerPlugin, PollServicePlugin, RouteServicePlugin } from '#services/plugins.ts';
 
 export const pollController = new Elysia()
   .use(LoggerPlugin)

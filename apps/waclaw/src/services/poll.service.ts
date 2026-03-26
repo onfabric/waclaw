@@ -1,6 +1,6 @@
-import type { QueuedMessage } from '#/db/types.ts';
-import type { MessageRepository } from '#/repositories/message.repository.ts';
-import { Service } from '#/services/service.ts';
+import type { QueuedMessage } from '#db/types.ts';
+import type { MessageRepository } from '#repositories/message.repository.ts';
+import { Service } from '#services/service.ts';
 
 export type PollResponse = {
   sender_phone: string;

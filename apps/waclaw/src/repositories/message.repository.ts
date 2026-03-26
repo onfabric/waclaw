@@ -1,6 +1,6 @@
 import type { Database, Statement } from 'bun:sqlite';
-import type { QueuedMessage } from '#/db/types.ts';
-import { Repository } from '#/repositories/repository.ts';
+import type { QueuedMessage } from '#db/types.ts';
+import { Repository } from '#repositories/repository.ts';
 
 export class MessageRepository extends Repository {
   private readonly stmtCreate: Statement<void, [string, string, string, string, string]>;

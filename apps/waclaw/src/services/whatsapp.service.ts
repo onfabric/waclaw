@@ -1,5 +1,5 @@
-import { WhatsAppClient } from '#/lib/whatsapp-client.ts';
-import { Service } from '#/services/service.ts';
+import { WhatsAppClient } from '#lib/whatsapp-client.ts';
+import { Service } from '#services/service.ts';
 
 export class WhatsAppService extends Service {
   private readonly client = new WhatsAppClient();

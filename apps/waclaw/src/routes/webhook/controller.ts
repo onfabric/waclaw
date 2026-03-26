@@ -1,10 +1,10 @@
 import { Elysia } from 'elysia';
-import { env } from '#/lib/env.ts';
-import { BadRequestError, UnauthorizedError } from '#/lib/errors.ts';
-import { verifyMetaSignature } from '#/lib/signature.ts';
-import type { MetaWebhookPayload } from '#/routes/webhook/model.ts';
-import { WebhookVerifyQuerySchema } from '#/routes/webhook/model.ts';
-import { LoggerPlugin, WebhookServicePlugin } from '#/services/plugins.ts';
+import { env } from '#lib/env.ts';
+import { BadRequestError, UnauthorizedError } from '#lib/errors.ts';
+import { verifyMetaSignature } from '#lib/signature.ts';
+import type { MetaWebhookPayload } from '#routes/webhook/model.ts';
+import { WebhookVerifyQuerySchema } from '#routes/webhook/model.ts';
+import { LoggerPlugin, WebhookServicePlugin } from '#services/plugins.ts';
 
 export const webhookController = new Elysia()
   .use(LoggerPlugin)

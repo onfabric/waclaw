@@ -1,7 +1,7 @@
-import type { MessageRepository } from '#/repositories/message.repository.ts';
-import type { PollService } from '#/services/poll.service.ts';
-import type { RouteService } from '#/services/route.service.ts';
-import { Service } from '#/services/service.ts';
+import type { MessageRepository } from '#repositories/message.repository.ts';
+import type { PollService } from '#services/poll.service.ts';
+import type { RouteService } from '#services/route.service.ts';
+import { Service } from '#services/service.ts';
 
 export class MessageService extends Service {
   private readonly routeService: RouteService;
