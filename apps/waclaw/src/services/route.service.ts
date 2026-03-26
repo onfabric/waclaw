@@ -3,8 +3,6 @@ import { NotFoundError } from '#lib/errors.ts';
 import type { RouteRepository } from '#repositories/route.repository.ts';
 import { Service } from '#services/service.ts';
 
-export type RedactedRoute = Omit<Route, 'wa_token'> & { wa_token: '[redacted]' };
-
 export class RouteService extends Service {
   private readonly routeRepo: RouteRepository;
 
@@ -25,15 +23,14 @@ export class RouteService extends Service {
     return this.routeRepo.getByPhoneNumberId({ phoneNumberId });
   }
 
-  create({ phoneNumberId, waToken }: { phoneNumberId: string; waToken: string }): RedactedRoute {
+  create({ phoneNumberId }: { phoneNumberId: string }): Route {
     const id = Bun.randomUUIDv7();
-    const connectorToken = Bun.randomUUIDv7();
-    this.routeRepo.create({ id, connectorToken, phoneNumberId, waToken });
+    const connectorToken = crypto.randomUUID();
+    this.routeRepo.create({ id, connectorToken, phoneNumberId });
     return {
       id,
       connector_token: connectorToken,
       phone_number_id: phoneNumberId,
-      wa_token: '[redacted]',
       created_at: Math.floor(Date.now() / 1000),
     };
   }
@@ -42,7 +39,7 @@ export class RouteService extends Service {
     this.routeRepo.delete({ connectorToken });
   }
 
-  list(): RedactedRoute[] {
-    return this.routeRepo.list().map((r) => ({ ...r, wa_token: '[redacted]' }));
+  list(): Route[] {
+    return this.routeRepo.list();
   }
 }

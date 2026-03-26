@@ -2,7 +2,6 @@ export type Route = {
   id: string;
   connector_token: string;
   phone_number_id: string;
-  wa_token: string;
   created_at: number;
 };
 

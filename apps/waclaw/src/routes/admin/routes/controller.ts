@@ -26,7 +26,7 @@ export const adminRoutesController = new Elysia({ prefix: '/admin/routes' })
   .post(
     '/',
     ({ body, routeService }) =>
-      routeService.create({ phoneNumberId: body.phone_number_id, waToken: body.wa_token }),
+      routeService.create({ phoneNumberId: body.phone_number_id }),
     { body: AdminRouteBodySchema, headers: AuthHeaderSchema, isAdmin: true },
   )
   .delete(

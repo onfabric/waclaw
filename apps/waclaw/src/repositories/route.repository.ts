@@ -5,7 +5,7 @@ import { Repository } from '#repositories/repository.ts';
 export class RouteRepository extends Repository {
   private readonly stmtGetByConnectorToken: Statement<Route, [string]>;
   private readonly stmtGetByPhoneNumberId: Statement<Route, [string]>;
-  private readonly stmtCreate: Statement<void, [string, string, string, string]>;
+  private readonly stmtCreate: Statement<void, [string, string, string]>;
   private readonly stmtDelete: Statement<void, [string]>;
   private readonly stmtList: Statement<Route, []>;
 
@@ -17,8 +17,8 @@ export class RouteRepository extends Repository {
     this.stmtGetByPhoneNumberId = db.query<Route, [string]>(
       'SELECT * FROM routes WHERE phone_number_id = ?',
     );
-    this.stmtCreate = db.query<void, [string, string, string, string]>(
-      'INSERT OR REPLACE INTO routes (id, connector_token, phone_number_id, wa_token) VALUES (?, ?, ?, ?)',
+    this.stmtCreate = db.query<void, [string, string, string]>(
+      'INSERT OR REPLACE INTO routes (id, connector_token, phone_number_id) VALUES (?, ?, ?)',
     );
     this.stmtDelete = db.query<void, [string]>('DELETE FROM routes WHERE connector_token = ?');
     this.stmtList = db.query<Route, []>('SELECT * FROM routes');
@@ -36,14 +36,12 @@ export class RouteRepository extends Repository {
     id,
     connectorToken,
     phoneNumberId,
-    waToken,
   }: {
     id: string;
     connectorToken: string;
     phoneNumberId: string;
-    waToken: string;
   }): void {
-    this.stmtCreate.run(id, connectorToken, phoneNumberId, waToken);
+    this.stmtCreate.run(id, connectorToken, phoneNumberId);
   }
 
   delete({ connectorToken }: { connectorToken: string }): void {
