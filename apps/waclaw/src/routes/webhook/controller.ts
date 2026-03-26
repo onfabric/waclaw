@@ -3,56 +3,48 @@ import { env } from '#/lib/env.ts';
 import { BadRequestError, UnauthorizedError } from '#/lib/errors.ts';
 import { verifyMetaSignature } from '#/lib/signature.ts';
 import type { MetaWebhookPayload } from '#/routes/webhook/model.ts';
-import type { ServicesPlugin } from '#/services/plugin.ts';
+import { WebhookVerifyQuerySchema } from '#/routes/webhook/model.ts';
+import { LoggerPlugin, WebhookServicePlugin } from '#/services/plugins.ts';
 
-export function createRoute(services: ServicesPlugin) {
-  return new Elysia()
-    .use(services)
-    .get('/webhook', ({ query }) => {
-      const q = query as Record<string, string | undefined>;
+export const webhookController = new Elysia()
+  .use(LoggerPlugin)
+  .use(WebhookServicePlugin)
+  .get(
+    '/webhook',
+    ({ query, logger }) => {
+      logger.info('Query:', query);
 
-      if (q['hub.mode'] !== 'subscribe' || q['hub.verify_token'] !== env.webhookVerifyToken) {
+      if (
+        query['hub.mode'] !== 'subscribe' ||
+        query['hub.verify_token'] !== env.webhookVerifyToken
+      ) {
         throw new UnauthorizedError('Webhook verification failed');
       }
-      if (!q['hub.challenge']) {
+      if (!query['hub.challenge']) {
         throw new BadRequestError('Missing hub.challenge');
       }
-      return new Response(q['hub.challenge'], { status: 200 });
-    })
-    .post('/webhook', async ({ request, messageService }) => {
-      const rawBody = await request.text();
-      const signature = request.headers.get('x-hub-signature-256');
+      return new Response(query['hub.challenge'], { status: 200 });
+    },
+    { query: WebhookVerifyQuerySchema },
+  )
+  .post('/webhook', async ({ request, webhookService, logger }) => {
+    const rawBody = await request.text();
+    const signature = request.headers.get('x-hub-signature-256');
 
-      if (!verifyMetaSignature(rawBody, signature, env.metaAppSecret)) {
-        throw new UnauthorizedError('Invalid webhook signature');
-      }
+    logger.info('Raw body:', rawBody);
 
-      let payload: MetaWebhookPayload;
-      try {
-        payload = JSON.parse(rawBody) as MetaWebhookPayload;
-      } catch {
-        throw new BadRequestError('Invalid JSON body');
-      }
+    if (!verifyMetaSignature(rawBody, signature, env.metaAppSecret)) {
+      throw new UnauthorizedError('Invalid webhook signature');
+    }
 
-      if (payload.object === 'whatsapp_business_account') {
-        for (const entry of payload.entry) {
-          for (const change of entry.changes) {
-            const { phone_number_id } = change.value.metadata;
-            const messages = change.value.messages ?? [];
-            for (const msg of messages) {
-              if (msg.type === 'text' && msg.text?.body) {
-                await messageService.handleIncoming({
-                  phoneNumberId: phone_number_id,
-                  waMessageId: msg.id,
-                  senderPhone: msg.from,
-                  body: msg.text.body,
-                });
-              }
-            }
-          }
-        }
-      }
+    let payload: MetaWebhookPayload;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch {
+      throw new BadRequestError('Invalid JSON body');
+    }
 
-      return new Response(null, { status: 200 });
-    });
-}
+    await webhookService.processIncomingPayload(payload);
+
+    return new Response(null, { status: 200 });
+  });

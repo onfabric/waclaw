@@ -1,9 +1,12 @@
 import { Elysia } from 'elysia';
 import { PollQuerySchema } from '#/routes/poll/model.ts';
-import type { ServicesPlugin } from '#/services/plugin.ts';
+import { LoggerPlugin, PollServicePlugin, RouteServicePlugin } from '#/services/plugins.ts';
 
-export function createRoute(services: ServicesPlugin) {
-  return new Elysia().use(services).get(
+export const pollController = new Elysia()
+  .use(LoggerPlugin)
+  .use(RouteServicePlugin)
+  .use(PollServicePlugin)
+  .get(
     '/poll',
     async ({ query, routeService, pollService }) => {
       routeService.getByConnectorToken({ connectorToken: query.token });
@@ -12,4 +15,3 @@ export function createRoute(services: ServicesPlugin) {
     },
     { query: PollQuerySchema },
   );
-}

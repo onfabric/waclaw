@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
-import type { ServicesPlugin } from '#/services/plugin.ts';
+import { HealthServicePlugin, LoggerPlugin } from '#/services/plugins.ts';
 
-export function createRoute(services: ServicesPlugin) {
-  return new Elysia().use(services).get('/health', ({ healthService }) => healthService.check());
-}
+export const healthController = new Elysia()
+  .use(LoggerPlugin)
+  .use(HealthServicePlugin)
+  .get('/health', ({ healthService }) => healthService.check());

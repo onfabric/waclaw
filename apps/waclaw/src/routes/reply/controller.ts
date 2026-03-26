@@ -1,9 +1,12 @@
 import { Elysia } from 'elysia';
 import { ReplyBodySchema } from '#/routes/reply/model.ts';
-import type { ServicesPlugin } from '#/services/plugin.ts';
+import { LoggerPlugin, RouteServicePlugin, WhatsAppServicePlugin } from '#/services/plugins.ts';
 
-export function createRoute(services: ServicesPlugin) {
-  return new Elysia().use(services).post(
+export const replyController = new Elysia()
+  .use(LoggerPlugin)
+  .use(RouteServicePlugin)
+  .use(WhatsAppServicePlugin)
+  .post(
     '/reply',
     async ({ body, routeService, whatsappService }) => {
       const route = routeService.getByConnectorToken({ connectorToken: body.connector_token });
@@ -17,4 +20,3 @@ export function createRoute(services: ServicesPlugin) {
     },
     { body: ReplyBodySchema },
   );
-}
