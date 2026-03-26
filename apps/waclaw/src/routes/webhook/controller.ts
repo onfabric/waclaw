@@ -31,8 +31,6 @@ export const webhookController = new Elysia()
     const rawBody = await request.text();
     const signature = request.headers.get('x-hub-signature-256');
 
-    logger.info('Raw body:', rawBody);
-
     if (!verifyMetaSignature(rawBody, signature, env.metaAppSecret)) {
       logger.error('Webhook signature verification failed');
       throw new UnauthorizedError('Invalid webhook signature');
