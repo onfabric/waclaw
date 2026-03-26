@@ -1,4 +1,5 @@
 import type { QueuedMessage } from '#db/types.ts';
+import { logger } from '#lib/logger.ts';
 import type { MessageRepository } from '#repositories/message.repository.ts';
 import { Service } from '#services/service.ts';
 
@@ -29,15 +30,18 @@ export class PollService extends Service {
   }): Promise<PollResponse | null> {
     const queued = this.messageRepo.deleteOldest({ connectorToken });
     if (queued) {
+      logger.info(`Poll dequeued stored message connector_token=${connectorToken}`);
       return Promise.resolve(toResponse(queued));
     }
 
+    logger.info(`Poll parked connector_token=${connectorToken}`);
     return new Promise<PollResponse | null>((resolve) => {
       this.waiting.set(connectorToken, resolve);
 
       setTimeout(() => {
         if (this.waiting.get(connectorToken) === resolve) {
           this.waiting.delete(connectorToken);
+          logger.info(`Poll timed out connector_token=${connectorToken}`);
           resolve(null);
         }
       }, timeoutMs);

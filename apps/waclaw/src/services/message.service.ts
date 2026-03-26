@@ -1,3 +1,4 @@
+import { logger } from '#lib/logger.ts';
 import type { MessageRepository } from '#repositories/message.repository.ts';
 import type { PollService } from '#services/poll.service.ts';
 import type { RouteService } from '#services/route.service.ts';
@@ -32,8 +33,11 @@ export class MessageService extends Service {
   }): Promise<void> {
     const route = this.routeService.getByPhoneNumberId({ phoneNumberId });
     if (!route) {
+      logger.warn(`No route for phone_number_id=${phoneNumberId}`);
       return;
     }
+
+    logger.info(`Incoming message from=${senderPhone} wa_message_id=${waMessageId} connector_token=${route.connector_token}`);
 
     const delivered = this.pollService.deliver({
       connectorToken: route.connector_token,
@@ -45,7 +49,10 @@ export class MessageService extends Service {
       },
     });
 
-    if (!delivered) {
+    if (delivered) {
+      logger.info(`Delivered to waiting poller connector_token=${route.connector_token}`);
+    } else {
+      logger.info(`No waiting poller, queuing message connector_token=${route.connector_token}`);
       this.messageRepo.create({
         connectorToken: route.connector_token,
         senderPhone,

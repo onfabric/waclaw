@@ -34,6 +34,7 @@ export const webhookController = new Elysia()
     logger.info('Raw body:', rawBody);
 
     if (!verifyMetaSignature(rawBody, signature, env.metaAppSecret)) {
+      logger.error('Webhook signature verification failed');
       throw new UnauthorizedError('Invalid webhook signature');
     }
 
