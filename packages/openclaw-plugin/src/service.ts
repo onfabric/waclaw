@@ -14,16 +14,13 @@ function isPollTimeoutError(error: { status: number; value?: unknown }): boolean
   if (error.status === 408) {
     return true;
   }
-  // Network-level timeout: edenFetch catches the thrown exception and wraps it as status 503
+  // Network-level timeout: edenFetch catches the thrown exception and wraps it as status 503.
+  // Node.js AbortSignal.timeout() rejects with a DOMException (name: "TimeoutError").
   if (error.status !== 503) {
     return false;
   }
-  const inner = error.value;
-  if (!(inner instanceof Error)) {
-    return false;
-  }
-  const name = (inner as DOMException).name;
-  return name === 'TimeoutError' || name === 'AbortError' || /timeout/i.test(inner.message);
+  const name = (error.value as Record<string, unknown> | null)?.name;
+  return name === 'TimeoutError' || name === 'AbortError';
 }
 
 export function createWaclawService(runtime: WaclawRuntime): OpenClawPluginService {
@@ -59,9 +56,9 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
           ctx.logger.info('waclaw: poll timed out, continuing');
           continue;
         }
-        throw new Error(
-          `waclaw poll failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`,
-        );
+        const detail =
+          error.value instanceof Error ? error.value.message : JSON.stringify(error.value ?? error);
+        throw new Error(`waclaw poll failed: status=${error.status} ${detail}`);
       }
       if (!data.sender_phone) {
         ctx.logger.warn(`waclaw: received message with missing sender_phone, skipping`);
