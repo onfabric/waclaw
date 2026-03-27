@@ -1,5 +1,6 @@
 import type { ChannelSetupWizard } from 'openclaw/plugin-sdk/channel-setup';
 import { createChannelPluginBase, createChatChannelPlugin } from 'openclaw/plugin-sdk/core';
+import { formatEdenError } from '#client.ts';
 import {
   applyAccountConfig,
   CHANNEL_ID,
@@ -92,7 +93,7 @@ export const waclawPlugin = createChatChannelPlugin({
         });
 
         if (res.error) {
-          throw new Error(`waclaw reply failed: ${res.error instanceof Error ? res.error.message : JSON.stringify(res.error)}`);
+          throw new Error(`waclaw reply failed: ${formatEdenError(res.error)}`);
         }
 
         return { messageId };

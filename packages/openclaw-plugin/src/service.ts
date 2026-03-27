@@ -1,5 +1,6 @@
 import { dispatchInboundDirectDmWithRuntime } from 'openclaw/plugin-sdk/channel-inbound';
 import type { OpenClawPluginService, OpenClawPluginServiceContext } from 'openclaw/plugin-sdk/core';
+import { formatEdenError } from '#client.ts';
 import { CHANNEL_ID, resolveAccount } from '#config.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
@@ -56,9 +57,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
           ctx.logger.info('waclaw: poll timed out, continuing');
           continue;
         }
-        const detail =
-          error.value instanceof Error ? error.value.message : JSON.stringify(error.value ?? error);
-        throw new Error(`waclaw poll failed: status=${error.status} ${detail}`);
+        throw new Error(`waclaw poll failed: ${formatEdenError(error)}`);
       }
       if (!data.sender_phone) {
         ctx.logger.warn(`waclaw: received message with missing sender_phone, skipping`);
@@ -90,9 +89,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
               },
             });
             if (error) {
-              throw new Error(
-                `waclaw reply failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`,
-              );
+              throw new Error(`waclaw reply failed: ${formatEdenError(error)}`);
             }
           }
         },
