@@ -6,4 +6,6 @@ export const CreateReplyBodySchema = t.Object({
   text: t.String({ minLength: 1 }),
 });
 
-export const CreateReplyResponseSchema = t.Null();
+export const CreateReplyResponseSchema = t.Object({
+  status: t.Literal('success'),
+});
