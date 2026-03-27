@@ -83,26 +83,27 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         rawBody: data.body,
         messageId: data.wa_message_id,
         deliver: async (payload) => {
-          if (payload.text && payload.replyToId) {
-            const { error } = await runtime.client('/reply', {
-              method: 'POST',
-              body: {
-                connector_token: connectorToken,
-                text: payload.text,
-                message_id: payload.replyToId || data.wa_message_id,
-              },
-            });
-            if (error) {
-              throw new Error(`waclaw reply failed: ${formatEdenError(error)}`);
-            }
-            ctx.logger.info(
-              `waclaw: replied to message ${data.wa_message_id} (reply length: ${payload.text.length})`,
-            );
-          } else {
+          if (!payload.text) {
             ctx.logger.warn(
-              `waclaw: delivering message to ${data.sender_phone} without text or replyToId, skipping`,
+              `waclaw: deliver called for ${data.sender_phone} with no text, skipping`,
             );
+            return;
           }
+          const { error } = await runtime.client('/send', {
+            method: 'POST',
+            body: {
+              connector_token: connectorToken,
+              to: data.sender_phone,
+              text: payload.text,
+              message_id: payload.replyToId || data.wa_message_id,
+            },
+          });
+          if (error) {
+            throw new Error(`waclaw deliver failed: ${formatEdenError(error)}`);
+          }
+          ctx.logger.info(
+            `waclaw: delivered to ${data.sender_phone} (length: ${payload.text.length})`,
+          );
         },
         onRecordError: (err) => ctx.logger.error(`waclaw: session record error: ${err}`),
         onDispatchError: (err, info) =>
