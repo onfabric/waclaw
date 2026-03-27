@@ -46,6 +46,8 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
     throw new Error('waclaw: connectorToken not found');
   }
 
+  ctx.logger.info(`waclaw: starting poll loop. account_id=${accountId}`);
+
   while (!runtime.isStopped) {
     try {
       const { data, error } = await runtime.client('/poll', {
@@ -79,18 +81,22 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         rawBody: data.body,
         messageId: data.wa_message_id,
         deliver: async (payload) => {
-          if (payload.text) {
+          if (payload.text && payload.replyToId) {
             const { error } = await runtime.client('/reply', {
               method: 'POST',
               body: {
                 connector_token: connectorToken,
                 text: payload.text,
-                message_id: data.wa_message_id,
+                message_id: payload.replyToId || data.wa_message_id,
               },
             });
             if (error) {
               throw new Error(`waclaw reply failed: ${formatEdenError(error)}`);
             }
+          } else {
+            ctx.logger.warn(
+              `waclaw: delivering message to ${data.sender_phone} without text or replyToId, skipping`,
+            );
           }
         },
         onRecordError: (err) => ctx.logger.error(`waclaw: session record error: ${err}`),
