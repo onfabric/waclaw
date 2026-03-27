@@ -5,6 +5,26 @@ import type { WaclawRuntime } from '#runtime.ts';
 
 const POLL_ERROR_RETRY_INTERVAL_MS = 5000;
 const CHANNEL_LABEL = 'WhatsApp (waclaw)';
+// Must be longer than the server-side park timeout (30 s) so the server always
+// gets the chance to respond with 408 before the client aborts.
+const POLL_CLIENT_TIMEOUT_MS = 35_000;
+
+function isPollTimeoutError(error: { status: number; value?: unknown }): boolean {
+  // Server explicitly signalled no messages
+  if (error.status === 408) {
+    return true;
+  }
+  // Network-level timeout: edenFetch catches the thrown exception and wraps it as status 503
+  if (error.status !== 503) {
+    return false;
+  }
+  const inner = error.value;
+  if (!(inner instanceof Error)) {
+    return false;
+  }
+  const name = (inner as DOMException).name;
+  return name === 'TimeoutError' || name === 'AbortError' || /timeout/i.test(inner.message);
+}
 
 export function createWaclawService(runtime: WaclawRuntime): OpenClawPluginService {
   return {
@@ -30,12 +50,18 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
 
   while (!runtime.isStopped) {
     try {
-      const { data, error } = await runtime.client('/poll', { query: { token: connectorToken } });
+      const { data, error } = await runtime.client('/poll', {
+        query: { token: connectorToken },
+        signal: AbortSignal.timeout(POLL_CLIENT_TIMEOUT_MS),
+      });
       if (error) {
-        throw new Error(`waclaw poll failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
-      }
-      if (data == null) {
-        continue;
+        if (isPollTimeoutError(error)) {
+          ctx.logger.info('waclaw: poll timed out, continuing');
+          continue;
+        }
+        throw new Error(
+          `waclaw poll failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`,
+        );
       }
       if (!data.sender_phone) {
         ctx.logger.warn(`waclaw: received message with missing sender_phone, skipping`);
@@ -67,7 +93,9 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
               },
             });
             if (error) {
-              throw new Error(`waclaw reply failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
+              throw new Error(
+                `waclaw reply failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`,
+              );
             }
           }
         },
