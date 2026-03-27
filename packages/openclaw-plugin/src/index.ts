@@ -1,13 +1,13 @@
 import { defineChannelPluginEntry } from 'openclaw/plugin-sdk/core';
 import { waclawPlugin } from '#channel.ts';
-import { CHANNEL_ID, getChannelSection } from '#config.ts';
+import { CHANNEL_DESCRIPTION, CHANNEL_ID, CHANNEL_NAME, getChannelSection } from '#config.ts';
 import { createRuntime, getRuntime } from '#runtime.ts';
 import { createWaclawService } from '#service.ts';
 
 export default defineChannelPluginEntry({
   id: CHANNEL_ID,
-  name: 'WhatsApp (waclaw)',
-  description: 'WhatsApp channel plugin via waclaw proxy',
+  name: CHANNEL_NAME,
+  description: CHANNEL_DESCRIPTION,
   plugin: waclawPlugin,
   registerFull(api) {
     const channelConfig = getChannelSection(api.config);

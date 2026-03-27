@@ -4,6 +4,7 @@ import { formatEdenError } from '#client.ts';
 import {
   applyAccountConfig,
   CHANNEL_ID,
+  CHANNEL_NAME,
   getChannelSection,
   inspectAccount,
   listAccountIds,
@@ -26,7 +27,7 @@ const setupWizard: ChannelSetupWizard = {
       preferredEnvVar: 'WACLAW_CONNECTOR_TOKEN',
       envPrompt: 'Use WACLAW_CONNECTOR_TOKEN from environment?',
       keepPrompt: 'Keep current connector token?',
-      inputPrompt: 'Enter your waclaw connector token (from POST /admin/routes):',
+      inputPrompt: 'Enter your waclaw connector token (from waclaw proxy admin API):',
       inspect: ({ cfg }) => {
         const token = getChannelSection(cfg)?.connectorToken;
         return {
@@ -67,10 +68,9 @@ const base = createChannelPluginBase({
   id: CHANNEL_ID,
   meta: {
     id: CHANNEL_ID,
-    label: 'WhatsApp (waclaw)',
-    selectionLabel: 'WhatsApp via waclaw proxy',
-    docsPath: '/channels/whatsapp',
-    blurb: 'Connect OpenClaw to WhatsApp via the waclaw relay proxy.',
+    label: CHANNEL_NAME,
+    selectionLabel: CHANNEL_NAME,
+    blurb: 'Connect OpenClaw to WhatsApp via the waclaw proxy.',
   },
   capabilities: {
     chatTypes: ['direct'],
