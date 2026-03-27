@@ -54,7 +54,7 @@ export const webhookController = new Elysia()
 
       await webhookService.processIncomingPayload(payload);
 
-      return status(StatusMap.OK, null);
+      return status(StatusMap.OK, { status: 'success' });
     },
     {
       response: { [StatusMap.OK]: WebhookResponseSchema },

@@ -58,7 +58,7 @@ export const adminRoutesController = new Elysia({ prefix: '/admin/routes' })
     '/:token',
     ({ params, routeService, status }) => {
       routeService.delete({ connectorToken: params.token });
-      return status(StatusMap['No Content'], null);
+      return status(StatusMap['No Content'], '');
     },
     {
       headers: AuthHeaderSchema,

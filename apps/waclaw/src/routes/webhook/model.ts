@@ -8,7 +8,9 @@ export const WebhookVerifyQuerySchema = t.Object({
 
 export const WebhookVerifyResponseSchema = t.String({ minLength: 1 });
 
-export const WebhookResponseSchema = t.Null();
+export const WebhookResponseSchema = t.Object({
+  status: t.Literal('success'),
+});
 
 /**
  * No body schema: body must be read raw for HMAC verification before parsing.
