@@ -65,7 +65,9 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         ctx.logger.warn(`waclaw: received message with missing sender_phone, skipping`);
         continue;
       }
-      ctx.logger.info(`waclaw: received message from ${data.sender_phone}`);
+      ctx.logger.info(
+        `waclaw: received message from ${data.sender_phone} (message length: ${data.body.length})`,
+      );
 
       await dispatchInboundDirectDmWithRuntime({
         cfg: ctx.config,
@@ -93,6 +95,9 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
             if (error) {
               throw new Error(`waclaw reply failed: ${formatEdenError(error)}`);
             }
+            ctx.logger.info(
+              `waclaw: replied to message ${data.wa_message_id} (reply length: ${payload.text.length})`,
+            );
           } else {
             ctx.logger.warn(
               `waclaw: delivering message to ${data.sender_phone} without text or replyToId, skipping`,
