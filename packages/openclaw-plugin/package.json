@@ -6,7 +6,7 @@
     "#*": "./src/*"
   },
   "scripts": {
-    "build": "bun build src/index.ts src/setup-entry.ts --outdir pkg/dist --target node --external openclaw",
+    "build": "bun run build.ts",
     "check:types": "bun run --bun tsc"
   },
   "dependencies": {
