@@ -1,0 +1,17 @@
+{
+  "id": "waclaw",
+  "kind": "channel",
+  "channels": ["waclaw"],
+  "name": "WhatsApp (waclaw)",
+  "description": "WhatsApp channel plugin via waclaw proxy",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "connectorToken": {
+        "type": "string",
+        "description": "Connector token from the waclaw proxy admin API"
+      }
+    }
+  }
+}

@@ -14,7 +14,7 @@ export const replyController = new Elysia()
         to: route.sender_phone,
         text: body.text,
       });
-      return status(StatusMap.OK, null);
+      return status(StatusMap.OK, { status: 'success' });
     },
     { body: CreateReplyBodySchema, response: { [StatusMap.OK]: CreateReplyResponseSchema } },
   );

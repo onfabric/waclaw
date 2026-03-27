@@ -1,25 +1,25 @@
-import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
-import { createWaclawClient } from '#client.ts';
-import { configSchema, PLUGIN_ID, parseConfig } from '#config.ts';
+import { defineChannelPluginEntry } from 'openclaw/plugin-sdk/core';
+import { waclawPlugin } from '#channel.ts';
+import { CHANNEL_ID, getChannelSection } from '#config.ts';
+import { createRuntime, getRuntime } from '#runtime.ts';
+import { createWaclawService } from '#service.ts';
 
-export default definePluginEntry({
-  id: PLUGIN_ID,
-  name: 'waclaw',
-  description: 'Send and receive messages from WhatsApp Business API',
-  configSchema,
-  register(api) {
-    const cfg = parseConfig(api.pluginConfig);
-
-    if (!cfg.relayToken) {
-      api.logger.error('waclaw: relayToken is required');
+export default defineChannelPluginEntry({
+  id: CHANNEL_ID,
+  name: 'WhatsApp (waclaw)',
+  description: 'WhatsApp channel plugin via waclaw proxy',
+  plugin: waclawPlugin,
+  registerFull(api) {
+    const channelConfig = getChannelSection(api.config);
+    if (!channelConfig?.connectorToken) {
+      api.logger.info('waclaw: no connectorToken configured, skipping runtime setup');
       return;
     }
 
-    const client = createWaclawClient('http://localhost:3000');
-    client('/health', { method: 'GET' }).then((res) => {
-      api.logger.info(`waclaw: health check: ${res.data?.status} (${res.data?.uptime}s)`);
-    });
+    createRuntime(api.runtime);
+    const runtime = getRuntime();
 
-    api.logger.info('waclaw: registered plugin');
+    const service = createWaclawService(runtime);
+    api.registerService(service);
   },
 });
