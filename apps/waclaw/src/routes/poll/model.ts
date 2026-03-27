@@ -11,4 +11,6 @@ export const PollMessageResponseSchema = t.Object({
   body: t.String({ minLength: 1 }),
 });
 
-export const PollMessageTimeoutResponseSchema = t.Null();
+export const PollMessageTimeoutResponseSchema = t.Object({
+  status: t.Literal('timeout'),
+});

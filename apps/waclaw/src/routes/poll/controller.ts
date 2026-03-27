@@ -22,7 +22,7 @@ export const pollController = new Elysia()
       set.headers['Connection'] = 'keep-alive';
 
       if (result === null) {
-        return status(StatusMap['Request Timeout'], null);
+        return status(StatusMap['Request Timeout'], { status: 'timeout' });
       }
 
       return status(StatusMap.OK, result);
