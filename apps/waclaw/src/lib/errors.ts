@@ -13,35 +13,35 @@ export class AppError extends Error {
 
 export class UnauthorizedError extends AppError {
   constructor(message = 'Unauthorized') {
-    super(401, message);
+    super(StatusMap.Unauthorized, message);
     this.name = 'UnauthorizedError';
   }
 }
 
 export class BadRequestError extends AppError {
   constructor(message = 'Bad Request') {
-    super(400, message);
+    super(StatusMap['Bad Request'], message);
     this.name = 'BadRequestError';
   }
 }
 
 export class NotFoundError extends AppError {
   constructor(message = 'Not Found') {
-    super(404, message);
+    super(StatusMap['Not Found'], message);
     this.name = 'NotFoundError';
   }
 }
 
 export class ConflictError extends AppError {
   constructor(message = 'Conflict') {
-    super(409, message);
+    super(StatusMap.Conflict, message);
     this.name = 'ConflictError';
   }
 }
 
 export class BadGatewayError extends AppError {
   constructor(message = 'Bad Gateway') {
-    super(502, message);
+    super(StatusMap['Bad Gateway'], message);
     this.name = 'BadGatewayError';
   }
 }
