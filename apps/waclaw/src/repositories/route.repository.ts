@@ -1,10 +1,10 @@
-import { type Database, SQLiteError, type Statement } from 'bun:sqlite';
+import type { Database, Statement } from 'bun:sqlite';
 import type { Route } from '#db/types.ts';
-import { DuplicateEntryError, Repository, SqliteErrorCode } from '#repositories/repository.ts';
+import { Repository, UniqueConstraintError } from '#repositories/repository.ts';
 
-export class DuplicateSenderPhoneError extends DuplicateEntryError {
+export class DuplicateSenderPhoneError extends Error {
   constructor() {
-    super('sender_phone');
+    super('Duplicate sender phone');
     this.name = 'DuplicateSenderPhoneError';
   }
 }
@@ -51,14 +51,9 @@ export class RouteRepository extends Repository {
     try {
       return this.stmtCreate.get(id, connectorToken, senderPhone)!;
     } catch (error) {
-      if (
-        error instanceof SQLiteError &&
-        error.errno === SqliteErrorCode.SQLITE_CONSTRAINT_UNIQUE
-      ) {
-        const duplicateError = DuplicateEntryError.fromSQLiteError(error);
-        throw duplicateError.column === 'sender_phone'
-          ? new DuplicateSenderPhoneError()
-          : duplicateError;
+      const uniqueConstraintError = UniqueConstraintError.tryFromSQLiteError(error);
+      if (uniqueConstraintError?.isOnColumn('sender_phone')) {
+        throw new DuplicateSenderPhoneError();
       }
       throw error;
     }

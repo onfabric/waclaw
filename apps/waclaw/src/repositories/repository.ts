@@ -1,25 +1,34 @@
-import type { Database, SQLiteError } from 'bun:sqlite';
+import { type Database, SQLiteError } from 'bun:sqlite';
 
-export enum SqliteErrorCode {
+enum SqliteErrorCode {
   /**
    * @see https://www.sqlite.org/rescode.html#constraint_unique
    */
   SQLITE_CONSTRAINT_UNIQUE = 2067,
 }
 
-export class DuplicateEntryError extends Error {
-  readonly column: string;
+export class UniqueConstraintError extends Error {
+  static readonly sqliteErrorCode = SqliteErrorCode.SQLITE_CONSTRAINT_UNIQUE;
 
-  constructor(column: string) {
-    super(`Duplicate entry on column: ${column}`);
-    this.name = 'DuplicateEntryError';
-    this.column = column;
+  private constructor(override cause: SQLiteError) {
+    super(cause.message);
+    this.name = 'UniqueConstraintError';
   }
 
-  static fromSQLiteError(cause: SQLiteError): DuplicateEntryError {
+  static tryFromSQLiteError(error: unknown): UniqueConstraintError | null {
+    if (error instanceof SQLiteError && error.errno === UniqueConstraintError.sqliteErrorCode) {
+      return new UniqueConstraintError(error);
+    }
+    return null;
+  }
+
+  isOnColumn(column: string): boolean {
     // SQLite message format: "UNIQUE constraint failed: table.column"
-    const column = cause.message.split(': ')[1]?.split('.')[1] ?? 'unknown';
-    return new DuplicateEntryError(column);
+    const parsedColumn = this.cause.message.split(': ')[1]?.split('.')[1];
+    if (!parsedColumn) {
+      return false;
+    }
+    return parsedColumn === column;
   }
 }
 
