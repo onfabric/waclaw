@@ -32,6 +32,13 @@ export class NotFoundError extends AppError {
   }
 }
 
+export class ConflictError extends AppError {
+  constructor(message = 'Conflict') {
+    super(409, message);
+    this.name = 'ConflictError';
+  }
+}
+
 export class BadGatewayError extends AppError {
   constructor(message = 'Bad Gateway') {
     super(502, message);
