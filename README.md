@@ -9,6 +9,7 @@ Use for:
 ## Setup
 
 ### 1. Deploying the server
+
 See the [server deployment guide](apps/waclaw/README.md) for step-by-step instructions.
 
 ### 2. Creating a connector token
