@@ -1,21 +1,15 @@
 # waclaw
 
-waclaw is a self-hosted WhatsApp router for [OpenClaw](https://openclaw.ai) that connects a single WhatsApp Business account to one or more OpenClaw instances.
+waclaw lets you host many [OpenClaw](https://openclaw.ai) instances behind a single WhatsApp Business account. Inbound messages are routed to the right OpenClaw by the sender's phone number.
 
-It works as a **router**: a single WhatsApp Business account receives all inbound messages, and waclaw routes each conversation to the correct OpenClaw instance based on the sender's phone number. Every OpenClaw gateway gets its own **connector token** that is bound to one or more sender numbers — so multiple gateways can share the same Business account without interfering with each other.
-
-This makes waclaw a good fit both for personal deployments (one openclaw, one WhatsApp number) and for hosting scenarios where a company runs many OpenClaw instances and wants their users to reach each instance through WhatsApp.
-
-## Repository structure
-
-| Package | Description |
-|---|---|
-| [`apps/waclaw`](apps/waclaw) | The relay server — receives webhooks from Meta and exposes poll/send endpoints |
-| [`packages/openclaw-plugin`](packages/openclaw-plugin) | The OpenClaw channel plugin that talks to the relay server |
+Use for:
+- **One claw, one number** — your personal AI, reachable over a WhatsApp Business account like any other contact.
+- **Many claws, one number** — your users each get their own AI, all texting the same WhatsApp Business account.
 
 ## Setup
 
 ### 1. Deploying the server
+
 See the [server deployment guide](apps/waclaw/README.md) for step-by-step instructions.
 
 ### 2. Creating a connector token
