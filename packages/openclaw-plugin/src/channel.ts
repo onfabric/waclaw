@@ -36,6 +36,31 @@ const setupWizard: ChannelSetupWizard = {
       },
     },
   ],
+  textInputs: [
+    {
+      // 'url' is used as the internal credentialValues tracking key;
+      // the actual config write is handled by applySet below.
+      inputKey: 'url',
+      message: 'Default outbound phone number (E.164, e.g. +12025550123):',
+      placeholder: '+12025550123',
+      required: false,
+      helpTitle: 'Default outbound recipient',
+      helpLines: [
+        'Used for native outbound sends that have no conversational context, e.g. cron announce.',
+        'Must be full E.164 format with a leading "+" (e.g. +12025550123).',
+        'Leave blank to skip — only needed if you use cron announcements.',
+      ],
+      keepPrompt: (value) => `Keep current defaultTo (${value})?`,
+      currentValue: ({ cfg }) => getChannelSection(cfg)?.defaultTo,
+      validate: ({ value }) => {
+        if (value && !/^\+\d+$/.test(value)) {
+          return 'Must be E.164 format with a leading "+" (e.g. +12025550123)';
+        }
+      },
+      applySet: ({ cfg, accountId, value }) =>
+        applyAccountConfig({ cfg, accountId, input: { defaultTo: value || undefined } }),
+    },
+  ],
 };
 
 const base = createChannelPluginBase({
@@ -54,6 +79,7 @@ const base = createChannelPluginBase({
     listAccountIds,
     resolveAccount,
     inspectAccount,
+    resolveDefaultTo: ({ cfg }) => getChannelSection(cfg)?.defaultTo,
   },
   setup: {
     applyAccountConfig,
@@ -73,31 +99,39 @@ export const waclawPlugin = createChatChannelPlugin({
   },
   threading: { topLevelReplyToMode: 'reply' },
   outbound: {
-    base: {
-      deliveryMode: 'direct',
-    },
-    attachedResults: {
-      channel: CHANNEL_ID,
-      sendText: async (ctx) => {
-        const runtime = getRuntime();
-        const account = resolveAccount(ctx.cfg, ctx.accountId);
-        const messageId = crypto.randomUUID();
+    deliveryMode: 'direct',
+    sendText: async (ctx) => {
+      const runtime = getRuntime();
+      const account = resolveAccount(ctx.cfg, ctx.accountId);
+      if (!account.connectorToken) {
+        throw new Error('waclaw: connectorToken is not configured');
+      }
 
-        const res = await runtime.client('/reply', {
-          method: 'POST',
-          body: {
-            connector_token: account.connectorToken,
-            text: ctx.text,
-            message_id: messageId,
-          },
-        });
+      // Falls back to the configured defaultTo for context-free sends like cron announce.
+      const to = ctx.to ?? account.defaultTo;
+      if (!to) {
+        throw new Error(
+          'waclaw: no outbound target. Set channels.waclaw.defaultTo or ensure OpenClaw provides a target for this send.',
+        );
+      }
 
-        if (res.error) {
-          throw new Error(`waclaw reply failed: ${formatEdenError(res.error)}`);
-        }
+      const messageId = crypto.randomUUID();
 
-        return { messageId };
-      },
+      const res = await runtime.client('/send', {
+        method: 'POST',
+        body: {
+          connector_token: account.connectorToken,
+          to,
+          text: ctx.text,
+          message_id: messageId,
+        },
+      });
+
+      if (res.error) {
+        throw new Error(`waclaw send failed: ${formatEdenError(res.error)}`);
+      }
+
+      return { channel: CHANNEL_ID, messageId };
     },
   },
 });

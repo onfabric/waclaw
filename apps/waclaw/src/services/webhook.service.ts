@@ -1,5 +1,6 @@
 import { env } from '#lib/env.ts';
 import { logger } from '#lib/logger.ts';
+import { normalizeToE164 } from '#lib/phone.ts';
 import type { MetaWebhookPayload } from '#routes/webhook/model.ts';
 import type { MessageService } from '#services/message.service.ts';
 import { Service } from '#services/service.ts';
@@ -31,7 +32,7 @@ export class WebhookService extends Service {
           if (msg.type === 'text' && msg.text?.body) {
             await this.messageService.handleIncoming({
               waMessageId: msg.id,
-              senderPhone: msg.from,
+              senderPhone: normalizeToE164(msg.from),
               body: msg.text.body,
             });
           }

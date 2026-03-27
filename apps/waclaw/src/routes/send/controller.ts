@@ -1,20 +1,20 @@
 import { Elysia, StatusMap } from 'elysia';
-import { CreateReplyBodySchema, CreateReplyResponseSchema } from '#routes/reply/model.ts';
+import { CreateSendBodySchema, CreateSendResponseSchema } from '#routes/send/model.ts';
 import { LoggerPlugin, RouteServicePlugin, WhatsAppServicePlugin } from '#services/plugins.ts';
 
-export const replyController = new Elysia()
+export const sendController = new Elysia()
   .use(LoggerPlugin)
   .use(RouteServicePlugin)
   .use(WhatsAppServicePlugin)
   .post(
-    '/reply',
+    '/send',
     async ({ body, routeService, whatsappService, status }) => {
-      const route = routeService.getByConnectorToken({ connectorToken: body.connector_token });
+      routeService.getByConnectorToken({ connectorToken: body.connector_token });
       await whatsappService.sendText({
-        to: route.sender_phone,
+        to: body.to,
         text: body.text,
       });
       return status(StatusMap.OK, { status: 'success' });
     },
-    { body: CreateReplyBodySchema, response: { [StatusMap.OK]: CreateReplyResponseSchema } },
+    { body: CreateSendBodySchema, response: { [StatusMap.OK]: CreateSendResponseSchema } },
   );
