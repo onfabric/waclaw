@@ -1,5 +1,9 @@
 import { Elysia, StatusMap } from 'elysia';
-import { PollQuerySchema, PollResponseSchema } from '#routes/poll/model.ts';
+import {
+  PollMessageQuerySchema,
+  PollMessageResponseSchema,
+  PollMessageTimeoutResponseSchema,
+} from '#routes/poll/model.ts';
 import { LoggerPlugin, PollServicePlugin, RouteServicePlugin } from '#services/plugins.ts';
 
 export const pollController = new Elysia()
@@ -17,7 +21,17 @@ export const pollController = new Elysia()
       // biome-ignore lint/complexity/useLiteralKeys: consistent with the others
       set.headers['Connection'] = 'keep-alive';
 
+      if (result === null) {
+        return status(StatusMap['Request Timeout'], null);
+      }
+
       return status(StatusMap.OK, result);
     },
-    { query: PollQuerySchema, response: { [StatusMap.OK]: PollResponseSchema } },
+    {
+      query: PollMessageQuerySchema,
+      response: {
+        [StatusMap.OK]: PollMessageResponseSchema,
+        [StatusMap['Request Timeout']]: PollMessageTimeoutResponseSchema,
+      },
+    },
   );
