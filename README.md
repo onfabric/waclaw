@@ -3,7 +3,6 @@
 waclaw lets you host many [OpenClaw](https://openclaw.ai) instances behind a single WhatsApp Business account. Inbound messages are routed to the right OpenClaw by the sender's phone number.
 
 Use for:
-Use for:
 - **One claw, one number** — your personal AI, reachable over WhatsApp like any other contact.
 - **Many claws, one number** — your users each get their own AI, all texting the same Business number.
 
