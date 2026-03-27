@@ -4,8 +4,8 @@ import { formatEdenError } from '#client.ts';
 import { CHANNEL_ID, resolveAccount } from '#config.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
-const REQUEST_TIMEOUT_408 = 408;
-const SERVICE_UNAVAILABLE_503 = 503;
+const HTTP_STATUS_REQUEST_TIMEOUT_408 = 408;
+const HTTP_STATUS_SERVICE_UNAVAILABLE_503 = 503;
 
 const POLL_ERROR_RETRY_INTERVAL_MS = 5000;
 const CHANNEL_LABEL = 'WhatsApp (waclaw)';
@@ -14,24 +14,14 @@ const CHANNEL_LABEL = 'WhatsApp (waclaw)';
 const POLL_CLIENT_TIMEOUT_MS = 35_000;
 
 function isPollTimeoutError(error: { status: number; value?: unknown }): boolean {
-  // Server explicitly signalled no messages
-  if (error.status === REQUEST_TIMEOUT_408) {
-    return true;
-  }
-  // Network-level timeout: edenFetch catches the thrown exception and wraps it as status 503.
-  // Node.js undici wraps abort errors one level deep:
-  //   TypeError('fetch failed', { cause: DOMException { name: 'TimeoutError' } })
-  // so we check both the outer error and its cause.
-  if (error.status !== SERVICE_UNAVAILABLE_503) {
-    return false;
-  }
-  const inner = error.value as Record<string, unknown> | null;
-  const name = inner?.name;
-  if (name === 'TimeoutError' || name === 'AbortError') {
-    return true;
-  }
-  const causeName = (inner?.cause as Record<string, unknown> | null)?.name;
-  return causeName === 'TimeoutError' || causeName === 'AbortError';
+  // 408: server explicitly signalled no messages during the park window.
+  // 503: edenFetch wraps all network-level exceptions (ECONNRESET, AbortError,
+  //      TimeoutError, …) as status 503. On a long-poll endpoint any dropped
+  //      connection is expected and should just trigger an immediate retry.
+  return (
+    error.status === HTTP_STATUS_REQUEST_TIMEOUT_408 ||
+    error.status === HTTP_STATUS_SERVICE_UNAVAILABLE_503
+  );
 }
 
 export function createWaclawService(runtime: WaclawRuntime): OpenClawPluginService {
