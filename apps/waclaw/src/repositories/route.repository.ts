@@ -1,11 +1,18 @@
 import type { Database, Statement } from 'bun:sqlite';
 import type { Route } from '#db/types.ts';
-import { Repository } from '#repositories/repository.ts';
+import { Repository, UniqueConstraintError } from '#repositories/repository.ts';
+
+export class DuplicateSenderPhoneError extends Error {
+  constructor() {
+    super('Duplicate sender phone');
+    this.name = 'DuplicateSenderPhoneError';
+  }
+}
 
 export class RouteRepository extends Repository {
   private readonly stmtGetByConnectorToken: Statement<Route, [string]>;
   private readonly stmtGetBySenderPhone: Statement<Route, [string]>;
-  private readonly stmtCreate: Statement<void, [string, string, string]>;
+  private readonly stmtCreate: Statement<Route, [string, string, string]>;
   private readonly stmtDelete: Statement<void, [string]>;
   private readonly stmtList: Statement<Route, []>;
 
@@ -17,8 +24,8 @@ export class RouteRepository extends Repository {
     this.stmtGetBySenderPhone = db.query<Route, [string]>(
       'SELECT * FROM routes WHERE sender_phone = ?',
     );
-    this.stmtCreate = db.query<void, [string, string, string]>(
-      'INSERT OR REPLACE INTO routes (id, connector_token, sender_phone) VALUES (?, ?, ?)',
+    this.stmtCreate = db.query<Route, [string, string, string]>(
+      'INSERT INTO routes (id, connector_token, sender_phone) VALUES (?, ?, ?) RETURNING *',
     );
     this.stmtDelete = db.query<void, [string]>('DELETE FROM routes WHERE connector_token = ?');
     this.stmtList = db.query<Route, []>('SELECT * FROM routes');
@@ -40,8 +47,16 @@ export class RouteRepository extends Repository {
     id: string;
     connectorToken: string;
     senderPhone: string;
-  }): void {
-    this.stmtCreate.run(id, connectorToken, senderPhone);
+  }): Route {
+    try {
+      return this.stmtCreate.get(id, connectorToken, senderPhone)!;
+    } catch (error) {
+      const uniqueConstraintError = UniqueConstraintError.tryFromSQLiteError(error);
+      if (uniqueConstraintError?.isOnColumn('sender_phone')) {
+        throw new DuplicateSenderPhoneError();
+      }
+      throw error;
+    }
   }
 
   delete({ connectorToken }: { connectorToken: string }): void {

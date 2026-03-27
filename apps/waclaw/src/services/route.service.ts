@@ -1,6 +1,7 @@
 import type { Route } from '#db/types.ts';
-import { NotFoundError } from '#lib/errors.ts';
+import { ConflictError, NotFoundError } from '#lib/errors.ts';
 import type { RouteRepository } from '#repositories/route.repository.ts';
+import { DuplicateSenderPhoneError } from '#repositories/route.repository.ts';
 import { Service } from '#services/service.ts';
 
 export class RouteService extends Service {
@@ -24,15 +25,18 @@ export class RouteService extends Service {
   }
 
   create({ senderPhone }: { senderPhone: string }): Route {
-    const id = Bun.randomUUIDv7();
-    const connectorToken = crypto.randomUUID();
-    this.routeRepo.create({ id, connectorToken, senderPhone });
-    return {
-      id,
-      connector_token: connectorToken,
-      sender_phone: senderPhone,
-      created_at: Math.floor(Date.now() / 1000),
-    };
+    try {
+      return this.routeRepo.create({
+        id: Bun.randomUUIDv7(),
+        connectorToken: crypto.randomUUID(),
+        senderPhone,
+      });
+    } catch (error) {
+      if (error instanceof DuplicateSenderPhoneError) {
+        throw new ConflictError(`Route already exists for phone: ${senderPhone}`);
+      }
+      throw error;
+    }
   }
 
   delete({ connectorToken }: { connectorToken: string }): void {
