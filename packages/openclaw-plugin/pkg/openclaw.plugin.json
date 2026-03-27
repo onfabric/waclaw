@@ -11,6 +11,10 @@
       "connectorToken": {
         "type": "string",
         "description": "Connector token from the waclaw proxy admin API"
+      },
+      "defaultTo": {
+        "type": "string",
+        "description": "Default WhatsApp recipient for native outbound sends (e.g. cron announce). Full E.164 with leading '+' — e.g. '+12025550123'. The '+' is stripped by the proxy before forwarding to the Meta Graph API."
       }
     }
   }

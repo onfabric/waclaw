@@ -1,8 +1,9 @@
 import { t } from 'elysia';
+import { E164PhoneSchema } from '#lib/phone.ts';
 
 const RouteResponseSchema = t.Object({
   id: t.String({ format: 'uuid' }),
-  sender_phone: t.String({ minLength: 1 }),
+  sender_phone: E164PhoneSchema,
   connector_token: t.String({ minLength: 1 }),
   created_at: t.Number({ minimum: 0 }),
 });
@@ -10,7 +11,7 @@ const RouteResponseSchema = t.Object({
 export const ListAdminRoutesResponseSchema = t.Array(RouteResponseSchema);
 
 export const CreateAdminRouteBodySchema = t.Object({
-  sender_phone: t.String({ minLength: 1 }),
+  sender_phone: E164PhoneSchema,
 });
 
 export const CreateAdminRouteResponseSchema = RouteResponseSchema;

@@ -10,12 +10,24 @@ type WaclawAccount = {
   connectorToken: string;
   allowFrom: string[];
   dmPolicy: string | undefined;
+  /**
+   * Default outbound recipient for native sends (e.g. cron announce).
+   * Store as full E.164 with a leading `+` (e.g. `"+12025550123"`).
+   * The `+` is stripped by the waclaw proxy before forwarding to the Meta Graph API.
+   */
+  defaultTo: string | undefined;
 };
 
 type WaclawChannelConfig = {
   connectorToken: string;
   allowFrom: string[];
   dmPolicy: string | undefined;
+  /**
+   * Default outbound recipient for native sends (e.g. cron announce).
+   * Store as full E.164 with a leading `+` (e.g. `"+12025550123"`).
+   * The `+` is stripped by the waclaw proxy before forwarding to the Meta Graph API.
+   */
+  defaultTo: string | undefined;
 };
 
 export function getChannelSection(cfg: OpenClawConfig): WaclawChannelConfig | undefined {
@@ -33,6 +45,7 @@ export function resolveAccount(cfg: OpenClawConfig, accountId?: string | null): 
     connectorToken,
     allowFrom: section.allowFrom ?? [],
     dmPolicy: section.dmPolicy,
+    defaultTo: section.defaultTo,
   };
 }
 
@@ -59,7 +72,7 @@ export function applyAccountConfig({
 }: {
   cfg: OpenClawConfig;
   accountId: string;
-  input: { token?: string; dmAllowlist?: string[] };
+  input: { token?: string; dmAllowlist?: string[]; defaultTo?: string };
 }): OpenClawConfig {
   const next = structuredClone(cfg);
   next.channels ??= {};
@@ -71,6 +84,9 @@ export function applyAccountConfig({
   }
   if (input.dmAllowlist) {
     section.allowFrom = input.dmAllowlist;
+  }
+  if (input.defaultTo !== undefined) {
+    section.defaultTo = input.defaultTo;
   }
   return next;
 }
