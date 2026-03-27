@@ -4,6 +4,14 @@ import type { OpenClawConfig } from 'openclaw/plugin-sdk/core';
  * The ID of the plugin as declared in the `openclaw.plugin.json` file.
  */
 export const CHANNEL_ID = 'waclaw';
+/**
+ * The name of the channel as declared in the `openclaw.plugin.json` file.
+ */
+export const CHANNEL_NAME = 'WhatsApp (waclaw)';
+/**
+ * The description of the channel as declared in the `openclaw.plugin.json` file.
+ */
+export const CHANNEL_DESCRIPTION = 'WhatsApp channel plugin via the waclaw proxy';
 
 type WaclawAccount = {
   accountId: string | null;

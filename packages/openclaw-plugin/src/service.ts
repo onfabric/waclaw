@@ -1,14 +1,13 @@
 import { dispatchInboundDirectDmWithRuntime } from 'openclaw/plugin-sdk/channel-inbound';
 import type { OpenClawPluginService, OpenClawPluginServiceContext } from 'openclaw/plugin-sdk/core';
 import { formatEdenError } from '#client.ts';
-import { CHANNEL_ID, resolveAccount } from '#config.ts';
+import { CHANNEL_ID, CHANNEL_NAME, resolveAccount } from '#config.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
 const HTTP_STATUS_REQUEST_TIMEOUT_408 = 408;
 const HTTP_STATUS_SERVICE_UNAVAILABLE_503 = 503;
 
 const POLL_ERROR_RETRY_INTERVAL_MS = 5000;
-const CHANNEL_LABEL = 'WhatsApp (waclaw)';
 // Must be longer than the server-side park timeout (30 s) so the server always
 // gets the chance to respond with 408 before the client aborts.
 const POLL_CLIENT_TIMEOUT_MS = 35_000;
@@ -82,7 +81,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         cfg: ctx.config,
         runtime: runtime.pluginRuntime,
         channel: CHANNEL_ID,
-        channelLabel: CHANNEL_LABEL,
+        channelLabel: CHANNEL_NAME,
         accountId,
         peer: { kind: 'direct', id: data.sender_phone },
         senderId: data.sender_phone,
