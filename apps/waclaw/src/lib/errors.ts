@@ -1,4 +1,4 @@
-import type { ErrorHandler } from 'elysia';
+import { type ErrorHandler, StatusMap } from 'elysia';
 import { logger } from '#lib/logger.ts';
 
 export class AppError extends Error {
@@ -59,7 +59,7 @@ export function elysiaErrorHandler({
     return status(error.statusCode, { error: error.message });
   }
   if (code === 'VALIDATION') {
-    return status(400, { error: 'Validation error', details: error.message });
+    return status(StatusMap['Bad Request'], { error: 'Validation error', details: error.message });
   }
-  return status(500, { error: 'Internal server error' });
+  return status(StatusMap['Internal Server Error'], { error: 'Internal server error' });
 }
