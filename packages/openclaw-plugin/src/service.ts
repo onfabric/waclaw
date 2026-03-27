@@ -13,6 +13,8 @@ const CHANNEL_LABEL = 'WhatsApp (waclaw)';
 // gets the chance to respond with 408 before the client aborts.
 const POLL_CLIENT_TIMEOUT_MS = 35_000;
 
+const CONFIGURE_PLUGIN_HINT = 'run `openclaw configure` to set it up, then restart the gateway';
+
 function isPollTimeoutError(error: { status: number; value?: unknown }): boolean {
   // 408: server explicitly signalled no messages during the park window.
   // 503: edenFetch wraps all network-level exceptions (ECONNRESET, AbortError,
@@ -39,11 +41,18 @@ export function createWaclawService(runtime: WaclawRuntime): OpenClawPluginServi
 }
 
 async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContext) {
-  const account = resolveAccount(ctx.config);
+  let account: ReturnType<typeof resolveAccount>;
+  try {
+    account = resolveAccount(ctx.config);
+  } catch {
+    ctx.logger.error(`waclaw: connectorToken is not configured — ${CONFIGURE_PLUGIN_HINT}`);
+    return;
+  }
   const accountId = account.accountId ?? 'default';
   const connectorToken = account.connectorToken;
   if (!connectorToken) {
-    throw new Error('waclaw: connectorToken not found');
+    ctx.logger.error(`waclaw: connectorToken is not configured — ${CONFIGURE_PLUGIN_HINT}`);
+    return;
   }
 
   ctx.logger.info(`waclaw: starting poll loop. account_id=${accountId}`);

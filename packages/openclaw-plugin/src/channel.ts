@@ -48,7 +48,6 @@ const setupWizard: ChannelSetupWizard = {
       helpLines: [
         'Used for native outbound sends that have no conversational context, e.g. cron announce.',
         'Must be full E.164 format with a leading "+" (e.g. +12025550123).',
-        'The "+" is stripped automatically before sending to the Meta API.',
         'Leave blank to skip — only needed if you use cron announcements.',
       ],
       keepPrompt: (value) => `Keep current defaultTo (${value})?`,
@@ -80,7 +79,7 @@ const base = createChannelPluginBase({
     listAccountIds,
     resolveAccount,
     inspectAccount,
-    resolveDefaultTo: ({ cfg, accountId }) => resolveAccount(cfg, accountId).defaultTo,
+    resolveDefaultTo: ({ cfg }) => getChannelSection(cfg)?.defaultTo,
   },
   setup: {
     applyAccountConfig,
@@ -104,9 +103,10 @@ export const waclawPlugin = createChatChannelPlugin({
     sendText: async (ctx) => {
       const runtime = getRuntime();
       const account = resolveAccount(ctx.cfg, ctx.accountId);
+      if (!account.connectorToken) {
+        throw new Error('waclaw: connectorToken is not configured');
+      }
 
-      // ctx.to is the peer id from OpenClaw. defaultTo is stored as full E.164 ("+…").
-      // WhatsAppClient strips the leading "+" before forwarding to the Meta API.
       // Falls back to the configured defaultTo for context-free sends like cron announce.
       const to = ctx.to ?? account.defaultTo;
       if (!to) {

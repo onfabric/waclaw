@@ -7,13 +7,12 @@ export const CHANNEL_ID = 'waclaw';
 
 type WaclawAccount = {
   accountId: string | null;
-  connectorToken: string;
+  connectorToken: string | undefined;
   allowFrom: string[];
   dmPolicy: string | undefined;
   /**
    * Default outbound recipient for native sends (e.g. cron announce).
    * Store as full E.164 with a leading `+` (e.g. `"+12025550123"`).
-   * The `+` is stripped by the waclaw proxy before forwarding to the Meta Graph API.
    */
   defaultTo: string | undefined;
 };
@@ -25,7 +24,6 @@ type WaclawChannelConfig = {
   /**
    * Default outbound recipient for native sends (e.g. cron announce).
    * Store as full E.164 with a leading `+` (e.g. `"+12025550123"`).
-   * The `+` is stripped by the waclaw proxy before forwarding to the Meta Graph API.
    */
   defaultTo: string | undefined;
 };
@@ -36,16 +34,12 @@ export function getChannelSection(cfg: OpenClawConfig): WaclawChannelConfig | un
 
 export function resolveAccount(cfg: OpenClawConfig, accountId?: string | null): WaclawAccount {
   const section = getChannelSection(cfg);
-  const connectorToken = section?.connectorToken;
-  if (!connectorToken) {
-    throw new Error('waclaw: connectorToken is required');
-  }
   return {
     accountId: accountId ?? null,
-    connectorToken,
-    allowFrom: section.allowFrom ?? [],
-    dmPolicy: section.dmPolicy,
-    defaultTo: section.defaultTo,
+    connectorToken: section?.connectorToken,
+    allowFrom: section?.allowFrom ?? [],
+    dmPolicy: section?.dmPolicy,
+    defaultTo: section?.defaultTo,
   };
 }
 
