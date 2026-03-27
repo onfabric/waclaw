@@ -49,16 +49,17 @@ export class BadGatewayError extends AppError {
 type ErrorHandlerOptions = Parameters<ErrorHandler>[0];
 type ErrorHandlerResult = ReturnType<ErrorHandler>;
 
-export function elysiaErrorHandler({ error, code, set }: ErrorHandlerOptions): ErrorHandlerResult {
+export function elysiaErrorHandler({
+  error,
+  code,
+  status,
+}: ErrorHandlerOptions): ErrorHandlerResult {
+  logger.error(error);
   if (error instanceof AppError) {
-    set.status = error.statusCode;
-    return { error: error.message };
+    return status(error.statusCode, { error: error.message });
   }
   if (code === 'VALIDATION') {
-    set.status = 400;
-    return { error: 'Validation error', details: error.message };
+    return status(400, { error: 'Validation error', details: error.message });
   }
-  logger.error(error);
-  set.status = 500;
-  return { error: 'Internal server error' };
+  return status(500, { error: 'Internal server error' });
 }
