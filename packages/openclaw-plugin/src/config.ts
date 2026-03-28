@@ -26,6 +26,10 @@ export function getChannelSection(cfg: OpenClawConfig): WaclawChannelConfig | un
   return cfg.channels?.[CHANNEL_ID];
 }
 
+export function isChannelConfigured(cfg: OpenClawConfig): boolean {
+  return Boolean(getChannelSection(cfg)?.connectorToken);
+}
+
 export function resolveAccount(cfg: OpenClawConfig, accountId?: string | null): WaclawAccount {
   const section = getChannelSection(cfg);
   return {

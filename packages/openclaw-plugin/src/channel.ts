@@ -7,6 +7,7 @@ import {
   CHANNEL_NAME,
   getChannelSection,
   inspectAccount,
+  isChannelConfigured,
   listAccountIds,
   resolveAccount,
 } from '#config.ts';
@@ -55,6 +56,7 @@ const base = createChannelPluginBase({
     resolveAccount,
     inspectAccount,
     resolveDefaultTo: ({ cfg }) => getChannelSection(cfg)?.connectorToken,
+    isConfigured: (_, cfg) => isChannelConfigured(cfg),
   },
   setup: {
     applyAccountConfig,
