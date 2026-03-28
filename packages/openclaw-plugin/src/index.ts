@@ -1,9 +1,9 @@
 import { defineChannelPluginEntry } from 'openclaw/plugin-sdk/core';
 import { waclawPlugin } from '#channel.ts';
+import { registerCli } from '#cli/index.ts';
 import { CHANNEL_DESCRIPTION, CHANNEL_ID, CHANNEL_NAME, getChannelSection } from '#config.ts';
 import { createRuntime, getRuntime } from '#runtime.ts';
 import { createWaclawService } from '#service.ts';
-import { registerCli } from '#cli.ts';
 
 export default defineChannelPluginEntry({
   id: CHANNEL_ID,
