@@ -12,7 +12,6 @@ function register({ cmd, config }: CommandCtx) {
 
       const existing = getChannelSection(config);
 
-      // Connector token
       let token: string | undefined;
       if (existing?.connectorToken) {
         console.log(`Current connector token: ${existing.connectorToken.slice(0, 8)}...`);
@@ -32,35 +31,8 @@ function register({ cmd, config }: CommandCtx) {
         }
       }
 
-      // Default outbound phone
-      console.log('\nDefault outbound phone number is used for cron announcements.');
-      console.log('Must be E.164 format with a leading "+" (e.g. +12025550123).');
-      console.log('Leave blank to skip.\n');
-
-      let phone: string | undefined;
-      if (existing?.defaultTo) {
-        console.log(`Current default: ${existing.defaultTo}`);
-        const keep = await prompt('Keep current number? (Y/n): ');
-        if (keep.toLowerCase() === 'n') {
-          phone = await prompt('Default outbound phone number: ');
-          if (phone && !/^\+\d+$/.test(phone)) {
-            console.error('\n❌ Invalid format. Must be E.164 (e.g. +12025550123).');
-            return;
-          }
-        }
-      } else {
-        phone = await prompt('Default outbound phone number: ');
-        if (phone && !/^\+\d+$/.test(phone)) {
-          console.error('\n❌ Invalid format. Must be E.164 (e.g. +12025550123).');
-          return;
-        }
-      }
-
       if (token) {
         await cli.config.set({ key: `channels.${CHANNEL_ID}.connectorToken`, value: token });
-      }
-      if (phone) {
-        await cli.config.set({ key: `channels.${CHANNEL_ID}.defaultTo`, value: phone });
       }
 
       console.log('\n✅ Configuration saved.');
