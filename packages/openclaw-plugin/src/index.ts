@@ -3,6 +3,7 @@ import { waclawPlugin } from '#channel.ts';
 import { CHANNEL_DESCRIPTION, CHANNEL_ID, CHANNEL_NAME, getChannelSection } from '#config.ts';
 import { createRuntime, getRuntime } from '#runtime.ts';
 import { createWaclawService } from '#service.ts';
+import { registerCli } from '#cli.ts';
 
 export default defineChannelPluginEntry({
   id: CHANNEL_ID,
@@ -10,6 +11,8 @@ export default defineChannelPluginEntry({
   description: CHANNEL_DESCRIPTION,
   plugin: waclawPlugin,
   registerFull(api) {
+    registerCli(api);
+
     const channelConfig = getChannelSection(api.config);
     if (!channelConfig?.connectorToken) {
       api.logger.info('waclaw: no connectorToken configured, skipping runtime setup');
