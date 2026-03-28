@@ -20,19 +20,15 @@ Run the interactive wizard:
 openclaw configure
 ```
 
-Select **Channels** > **WhatsApp (waclaw)** and follow the prompts. You will be asked for:
+Select **Channels** > **WhatsApp (waclaw)** and follow the prompts.
 
-- **Connector token** — from the waclaw admin API.
-- **Default outbound number** *(optional)* — E.164 format (e.g. `+12025550123`), used for context-free sends like cron announcements.
-
-Or edit `openclaw.config.json` directly:
+Alternatively, edit `openclaw.config.json` directly:
 
 ```json
 {
   "channels": {
     "waclaw": {
-      "connectorToken": "<your-connector-token>",
-      "defaultTo": "+12025550123"
+      "connectorToken": "<your-connector-token>"
     }
   }
 }

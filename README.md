@@ -54,7 +54,7 @@ curl -s -X DELETE https://your.domain.com/admin/routes/<connector_token> \
 
 ### 3. Configuring the plugin
 
-See the [plugin configuration guide](packages/openclaw-plugin/README.md) for instructions on how to install and configure the OpenClaw plugin after your server is up and you have a connector token.
+See the [plugin configuration guide](packages/openclaw-plugin/pkg/README.md) for instructions on how to install and configure the OpenClaw plugin after your server is up and you have a connector token.
 
 ### 4. Sending and receiving messages
 
