@@ -9,9 +9,9 @@ export const sendController = new Elysia()
   .post(
     '/send',
     async ({ body, routeService, whatsappService, status }) => {
-      routeService.getByConnectorToken({ connectorToken: body.connector_token });
+      const route = routeService.getByConnectorToken({ connectorToken: body.connector_token });
       await whatsappService.sendText({
-        to: body.to,
+        to: route.sender_phone,
         text: body.text,
       });
       return status(StatusMap.OK, { status: 'success' });

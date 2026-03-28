@@ -16,24 +16,10 @@ export const CHANNEL_DESCRIPTION = 'WhatsApp channel plugin via the waclaw proxy
 type WaclawAccount = {
   accountId: string | null;
   connectorToken: string | undefined;
-  allowFrom: string[];
-  dmPolicy: string | undefined;
-  /**
-   * Default outbound recipient for native sends (e.g. cron announce).
-   * Store as full E.164 with a leading `+` (e.g. `"+12025550123"`).
-   */
-  defaultTo: string | undefined;
 };
 
 type WaclawChannelConfig = {
   connectorToken: string;
-  allowFrom: string[];
-  dmPolicy: string | undefined;
-  /**
-   * Default outbound recipient for native sends (e.g. cron announce).
-   * Store as full E.164 with a leading `+` (e.g. `"+12025550123"`).
-   */
-  defaultTo: string | undefined;
 };
 
 export function getChannelSection(cfg: OpenClawConfig): WaclawChannelConfig | undefined {
@@ -45,9 +31,6 @@ export function resolveAccount(cfg: OpenClawConfig, accountId?: string | null): 
   return {
     accountId: accountId ?? null,
     connectorToken: section?.connectorToken,
-    allowFrom: section?.allowFrom ?? [],
-    dmPolicy: section?.dmPolicy,
-    defaultTo: section?.defaultTo,
   };
 }
 
@@ -74,7 +57,7 @@ export function applyAccountConfig({
 }: {
   cfg: OpenClawConfig;
   accountId: string;
-  input: { token?: string; dmAllowlist?: string[]; defaultTo?: string };
+  input: { token?: string };
 }): OpenClawConfig {
   const next = structuredClone(cfg);
   next.channels ??= {};
@@ -83,12 +66,6 @@ export function applyAccountConfig({
   const section = next.channels[CHANNEL_ID];
   if (input.token) {
     section.connectorToken = input.token;
-  }
-  if (input.dmAllowlist) {
-    section.allowFrom = input.dmAllowlist;
-  }
-  if (input.defaultTo !== undefined) {
-    section.defaultTo = input.defaultTo;
   }
   return next;
 }
