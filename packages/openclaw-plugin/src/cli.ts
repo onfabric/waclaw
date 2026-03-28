@@ -1,6 +1,10 @@
+import { execFile } from 'node:child_process';
 import * as readline from 'node:readline';
+import { promisify } from 'node:util';
 import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
-import { CHANNEL_ID, CHANNEL_NAME, getChannelSection, savePluginConfig } from '#config.ts';
+import { CHANNEL_ID, CHANNEL_NAME, getChannelSection } from '#config.ts';
+
+const execFileAsync = promisify(execFile);
 
 function prompt(question: string): Promise<string> {
   const rl = readline.createInterface({
@@ -13,6 +17,15 @@ function prompt(question: string): Promise<string> {
       resolve(answer.trim());
     });
   });
+}
+
+async function configSet(key: string, value: string): Promise<void> {
+  const { stderr } = await execFileAsync('openclaw', ['config', 'set', key, value], {
+    timeout: 10_000,
+  });
+  if (stderr?.includes('error')) {
+    throw new Error(`Failed to set ${key}: ${stderr}`);
+  }
 }
 
 export function registerCli(api: OpenClawPluginApi) {
@@ -28,6 +41,7 @@ export function registerCli(api: OpenClawPluginApi) {
 
           const existing = getChannelSection(config);
 
+          // Connector token
           let token: string | undefined;
           if (existing?.connectorToken) {
             console.log(`Current connector token: ${existing.connectorToken.slice(0, 8)}...`);
@@ -47,6 +61,7 @@ export function registerCli(api: OpenClawPluginApi) {
             }
           }
 
+          // Default outbound phone
           console.log('\nDefault outbound phone number is used for cron announcements.');
           console.log('Must be E.164 format with a leading "+" (e.g. +12025550123).');
           console.log('Leave blank to skip.\n');
@@ -70,19 +85,15 @@ export function registerCli(api: OpenClawPluginApi) {
             }
           }
 
-          if (!token) {
-            console.error('\n❌ No token provided. Setup cancelled.');
-            return;
+          // Write config via openclaw CLI
+          if (token) {
+            await configSet(`channels.${CHANNEL_ID}.connectorToken`, token);
+          }
+          if (phone) {
+            await configSet(`channels.${CHANNEL_ID}.defaultTo`, phone);
           }
 
-          savePluginConfig(config, {
-            connectorToken: token,
-            defaultTo: phone,
-            allowFrom: [],
-            dmPolicy: 'allowlist',
-          });
-
-          console.log('\n✅ Configuration saved to ~/.openclaw/openclaw.json');
+          console.log('\n✅ Configuration saved.');
           console.log('  Restart the gateway to apply: openclaw gateway restart\n');
         });
 
