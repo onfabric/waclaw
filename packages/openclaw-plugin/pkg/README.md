@@ -17,13 +17,8 @@ openclaw plugins install @onfabric/waclaw-plugin
 Run the interactive wizard:
 
 ```bash
-openclaw configure
+openclaw waclaw setup
 ```
-
-Select **Channels** > **WhatsApp (waclaw)** and follow the prompts. You will be asked for:
-
-- **Connector token** — from the waclaw admin API.
-- **Default outbound number** *(optional)* — E.164 format (e.g. `+12025550123`), used for context-free sends like cron announcements.
 
 Or edit `openclaw.config.json` directly:
 
@@ -31,8 +26,7 @@ Or edit `openclaw.config.json` directly:
 {
   "channels": {
     "waclaw": {
-      "connectorToken": "<your-connector-token>",
-      "defaultTo": "+12025550123"
+      "connectorToken": "<your-connector-token>"
     }
   }
 }
