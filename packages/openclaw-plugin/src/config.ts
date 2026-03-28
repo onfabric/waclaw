@@ -1,4 +1,5 @@
 import type { OpenClawConfig } from 'openclaw/plugin-sdk/core';
+import { saveOpenClawConfig } from '#lib/openclaw.ts';
 
 /**
  * The ID of the plugin as declared in the `openclaw.plugin.json` file.
@@ -91,4 +92,12 @@ export function applyAccountConfig({
     section.defaultTo = input.defaultTo;
   }
   return next;
+}
+
+export function savePluginConfig(config: OpenClawConfig, pluginConfig: WaclawChannelConfig): void {
+  config.channels = config.channels || {};
+  config.channels[CHANNEL_ID] = config.channels[CHANNEL_ID] || {};
+  config.channels[CHANNEL_ID] = pluginConfig;
+
+  saveOpenClawConfig(config);
 }
