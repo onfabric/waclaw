@@ -1,7 +1,7 @@
 {
   "name": "@onfabric/waclaw-plugin",
   "description": "Send and receive messages from WhatsApp Business API",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "author": "Fabric Developers <developers@onfabric.io>",
   "repository": {
     "type": "git",
