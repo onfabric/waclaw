@@ -4,9 +4,6 @@ import { promisify } from 'node:util';
 const execPromise = promisify(exec);
 
 export async function execAsync(command: string): Promise<string> {
-  const { stdout, stderr } = await execPromise(command);
-  if (stderr) {
-    throw new Error(`Failed to execute command: ${stderr}`);
-  }
+  const { stdout } = await execPromise(command);
   return stdout;
 }
