@@ -101,7 +101,6 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
             method: 'POST',
             body: {
               connector_token: connectorToken,
-              to: data.sender_phone,
               text: payload.text,
               message_id: payload.replyToId || data.wa_message_id,
             },
