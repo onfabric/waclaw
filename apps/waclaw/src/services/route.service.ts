@@ -40,7 +40,10 @@ export class RouteService extends Service {
   }
 
   delete({ connectorToken }: { connectorToken: string }): void {
-    this.routeRepo.delete({ connectorToken });
+    const deletedRouteId = this.routeRepo.delete({ connectorToken });
+    if (!deletedRouteId) {
+      throw new NotFoundError(`Route not found: ${connectorToken}`);
+    }
   }
 
   list(): Route[] {
