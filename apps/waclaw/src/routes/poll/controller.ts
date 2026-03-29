@@ -13,7 +13,8 @@ export const pollController = new Elysia()
   .get(
     '/poll',
     async ({ query, routeService, pollService, set, status }) => {
-      routeService.getByConnectorToken({ connectorToken: query.token });
+      routeService.recordPollActivity({ connectorToken: query.token });
+
       const result = await pollService.park({ connectorToken: query.token, timeoutMs: 30_000 });
 
       // Explicit headers for long polling requests

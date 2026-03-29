@@ -3,6 +3,7 @@ export type Route = {
   connector_token: string;
   sender_phone: string;
   created_at: number;
+  last_polled_at: number | null;
 };
 
 export type QueuedMessage = {

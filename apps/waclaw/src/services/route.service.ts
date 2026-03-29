@@ -46,4 +46,10 @@ export class RouteService extends Service {
   list(): Route[] {
     return this.routeRepo.list();
   }
+
+  recordPollActivity({ connectorToken }: { connectorToken: string }): Route {
+    const route = this.getByConnectorToken({ connectorToken });
+    this.routeRepo.setLastPolledAtToNow({ connectorToken });
+    return route;
+  }
 }

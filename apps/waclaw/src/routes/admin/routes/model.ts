@@ -6,6 +6,7 @@ const RouteResponseSchema = t.Object({
   sender_phone: E164PhoneSchema,
   connector_token: t.String({ minLength: 1 }),
   created_at: t.Number({ minimum: 0 }),
+  last_polled_at: t.Nullable(t.Number({ minimum: 0 })),
 });
 
 export const ListAdminRoutesResponseSchema = t.Array(RouteResponseSchema);

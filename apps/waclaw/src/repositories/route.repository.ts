@@ -15,6 +15,7 @@ export class RouteRepository extends Repository {
   private readonly stmtCreate: Statement<Route, [string, string, string]>;
   private readonly stmtDelete: Statement<void, [string]>;
   private readonly stmtList: Statement<Route, []>;
+  private readonly stmtSetLastPolledAtToNow: Statement<void, [string]>;
 
   constructor(db: Database) {
     super(db);
@@ -29,6 +30,9 @@ export class RouteRepository extends Repository {
     );
     this.stmtDelete = db.query<void, [string]>('DELETE FROM routes WHERE connector_token = ?');
     this.stmtList = db.query<Route, []>('SELECT * FROM routes');
+    this.stmtSetLastPolledAtToNow = db.query<void, [string]>(
+      'UPDATE routes SET last_polled_at = unixepoch() WHERE connector_token = ?',
+    );
   }
 
   getByConnectorToken({ connectorToken }: { connectorToken: string }): Route | null {
@@ -65,5 +69,9 @@ export class RouteRepository extends Repository {
 
   list(): Route[] {
     return this.stmtList.all();
+  }
+
+  setLastPolledAtToNow({ connectorToken }: { connectorToken: string }): void {
+    this.stmtSetLastPolledAtToNow.run(connectorToken);
   }
 }
