@@ -17,12 +17,6 @@ export const CreateAdminRouteBodySchema = t.Object({
 
 export const CreateAdminRouteResponseSchema = RouteResponseSchema;
 
-/**
- * Elysia has a bug when the response is null, so we use an empty string instead.
- * @see https://github.com/elysiajs/elysia/issues/1738
- */
-export const DeleteAdminRouteResponseSchema = t.Literal('');
-
 export const AuthHeaderSchema = t.Object({
   authorization: t.String({ minLength: 1 }),
 });
