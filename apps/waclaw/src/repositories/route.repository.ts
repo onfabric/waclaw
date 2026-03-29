@@ -28,7 +28,9 @@ export class RouteRepository extends Repository {
     this.stmtCreate = db.query<Route, [string, string, string]>(
       'INSERT INTO routes (id, connector_token, sender_phone) VALUES (?, ?, ?) RETURNING *',
     );
-    this.stmtDelete = db.query<Pick<Route, 'id'>, [string]>('DELETE FROM routes WHERE connector_token = ? RETURNING id');
+    this.stmtDelete = db.query<Pick<Route, 'id'>, [string]>(
+      'DELETE FROM routes WHERE connector_token = ? RETURNING id',
+    );
     this.stmtList = db.query<Route, []>('SELECT * FROM routes');
     this.stmtSetLastPolledAtToNow = db.query<void, [string]>(
       'UPDATE routes SET last_polled_at = unixepoch() WHERE connector_token = ?',
