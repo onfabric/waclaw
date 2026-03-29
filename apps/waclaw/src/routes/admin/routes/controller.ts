@@ -4,6 +4,7 @@ import {
   AuthHeaderSchema,
   CreateAdminRouteBodySchema,
   CreateAdminRouteResponseSchema,
+  DeleteAdminRouteResponseSchema,
   ListAdminRoutesResponseSchema,
 } from '#routes/admin/routes/model.ts';
 import { LoggerPlugin, RouteServicePlugin } from '#services/plugins.ts';
@@ -57,10 +58,13 @@ export const adminRoutesController = new Elysia({ prefix: '/admin/routes' })
     '/:token',
     ({ params, routeService, status }) => {
       routeService.delete({ connectorToken: params.token });
-      return status(StatusMap['No Content']);
+      return status(StatusMap['No Content'], undefined);
     },
     {
       headers: AuthHeaderSchema,
       isAdmin: true,
+      response: {
+        [StatusMap['No Content']]: DeleteAdminRouteResponseSchema,
+      },
     },
   );
