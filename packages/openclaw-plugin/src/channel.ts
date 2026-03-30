@@ -1,3 +1,4 @@
+import type { ChannelMessageActionName } from 'openclaw/plugin-sdk';
 import type { ChannelSetupWizard } from 'openclaw/plugin-sdk/channel-setup';
 import {
   type ChannelPlugin,
@@ -15,6 +16,8 @@ import {
   resolveAccount,
 } from '#config.ts';
 import { getRuntime } from '#runtime.ts';
+
+const SUPPORTED_ACTIONS: ChannelMessageActionName[] = ['react'];
 
 const setupWizard: ChannelSetupWizard = {
   channel: CHANNEL_ID,
@@ -44,7 +47,12 @@ const setupWizard: ChannelSetupWizard = {
 };
 
 const actions: NonNullable<ChannelPlugin['actions']> = {
-  describeMessageTool: () => ({ actions: ['react'] as const }),
+  describeMessageTool: () => {
+    return { actions: SUPPORTED_ACTIONS };
+  },
+  supportsAction: ({ action }) => {
+    return SUPPORTED_ACTIONS.includes(action);
+  },
   handleAction: async (ctx) => {
     if (ctx.action !== 'react') {
       return {
@@ -59,8 +67,9 @@ const actions: NonNullable<ChannelPlugin['actions']> = {
       throw new Error('waclaw: connectorToken is not configured');
     }
 
-    const messageId = ctx.params.messageId as string | undefined;
-    const emoji = (ctx.params.emoji as string | undefined) ?? '';
+    const params: { messageId?: string; emoji?: string } = ctx.params;
+    const messageId = params.messageId;
+    const emoji = params.emoji ?? '';
 
     if (!messageId) {
       return { content: [{ type: 'text', text: 'Missing messageId for reaction' }], details: {} };
