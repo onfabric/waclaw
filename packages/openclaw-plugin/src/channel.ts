@@ -106,6 +106,12 @@ const base = createChannelPluginBase({
     chatTypes: ['direct'],
     reactions: true,
   },
+  agentPrompt: {
+    messageToolHints: () => [
+      '- You can react to WhatsApp messages with any emoji. React like a human would — to laugh, agree, show love, or vibe with something without needing to type a whole reply. Keep it spontaneous and fun, not robotic.',
+      '- React to the user while you work to keep them engaged — don\'t leave them hanging in silence. A quick reaction shows you\'re there and paying attention.',
+    ],
+  },
   config: {
     listAccountIds,
     resolveAccount,
