@@ -205,6 +205,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
           const hasAgentReacted = runtime.agentReactedMessageIds.delete(data.wa_message_id);
           if (hasAgentReacted) {
             ctx.logger.info('waclaw: skipping emoji removal as it was set by the agent');
+            return;
           }
           await sendRemoveReaction({ runtime, connectorToken, waMessageId: data.wa_message_id });
         },
