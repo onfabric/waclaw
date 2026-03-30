@@ -1,4 +1,3 @@
-import { removeAckReactionAfterReply } from 'openclaw/plugin-sdk/channel-feedback';
 import { dispatchInboundDirectDmWithRuntime } from 'openclaw/plugin-sdk/channel-inbound';
 import type {
   OpenClawConfig,
@@ -146,7 +145,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         `waclaw: received message from ${data.sender_phone} (message length: ${data.body.length})`,
       );
 
-      const ackReaction = maybeSendAckReaction({
+      maybeSendAckReaction({
         runtime,
         cfg: ctx.config,
         connectorToken,
@@ -174,6 +173,16 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
             );
             return;
           }
+
+          // Remove ack reaction before sending the text reply — unless the agent
+          // already reacted (its emoji replaced the ack on WhatsApp).
+          const hasAgentReacted = runtime.agentReactedMessageIds.delete(data.wa_message_id);
+          if (!hasAgentReacted) {
+            sendRemoveReaction({ runtime, connectorToken, waMessageId: data.wa_message_id }).catch(
+              (err) => ctx.logger.warn(`waclaw: remove ack reaction failed: ${err}`),
+            );
+          }
+
           const { error } = await runtime.client('/send', {
             method: 'POST',
             body: {
@@ -193,23 +202,6 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         onRecordError: (err) => ctx.logger.error(`waclaw: session record error: ${err}`),
         onDispatchError: (err, info) =>
           ctx.logger.error(`waclaw: dispatch error [${info.kind}]: ${err}`),
-      });
-
-      removeAckReactionAfterReply({
-        removeAfterReply: true,
-        ackReactionPromise: ackReaction.sendPromise,
-        ackReactionValue: EMOJI_REACTION,
-        remove: async () => {
-          // Only remove if the agent didn't react — on WhatsApp, the agent's
-          // reaction replaced the ack, so removing would wipe it.
-          const hasAgentReacted = runtime.agentReactedMessageIds.delete(data.wa_message_id);
-          if (hasAgentReacted) {
-            ctx.logger.info('waclaw: skipping emoji removal as it was set by the agent');
-            return;
-          }
-          await sendRemoveReaction({ runtime, connectorToken, waMessageId: data.wa_message_id });
-        },
-        onError: (err) => ctx.logger.warn(`waclaw: remove ack reaction failed: ${err}`),
       });
     } catch (err) {
       ctx.logger.error(`waclaw: poll error: ${err}`);

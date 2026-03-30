@@ -59,6 +59,10 @@ const actions: NonNullable<ChannelPlugin['actions']> = {
   // skips target resolution and routes straight to handleAction.
   extractToolSend: () => null,
   handleAction: async (ctx) => {
+    console.info(
+      `waclaw: handleAction called action=${ctx.action} params=${JSON.stringify(ctx.params)}`,
+    );
+
     if (ctx.action !== 'react') {
       return {
         content: [{ type: 'text', text: `Unsupported action: ${ctx.action}` }],
@@ -77,8 +81,11 @@ const actions: NonNullable<ChannelPlugin['actions']> = {
     const emoji = params.emoji ?? '';
 
     if (!messageId) {
+      console.warn('waclaw: react called without messageId');
       return { content: [{ type: 'text', text: 'Missing messageId for reaction' }], details: {} };
     }
+
+    console.info(`waclaw: sending reaction emoji=${emoji} messageId=${messageId}`);
 
     const res = await runtime.client('/send', {
       method: 'POST',
@@ -96,10 +103,12 @@ const actions: NonNullable<ChannelPlugin['actions']> = {
 
     if (emoji) {
       runtime.agentReactedMessageIds.add(messageId);
+      console.info(`waclaw: tracked agent reaction for messageId=${messageId}`);
     }
 
-    const action = emoji ? `Reacted with ${emoji}` : 'Removed reaction';
-    return { content: [{ type: 'text', text: action }], details: {} };
+    const result = emoji ? `Reacted with ${emoji}` : 'Removed reaction';
+    console.info(`waclaw: handleAction completed — ${result} on messageId=${messageId}`);
+    return { content: [{ type: 'text', text: result }], details: {} };
   },
 };
 
@@ -118,7 +127,7 @@ const base = createChannelPluginBase({
   agentPrompt: {
     messageToolHints: () => [
       '- You can react to WhatsApp messages with any emoji. React like a human would — to laugh, agree, show love, or vibe with something without needing to type a whole reply. Keep it spontaneous and fun, not robotic.',
-      '- React to the user while you work to keep them engaged — don\'t leave them hanging in silence. A quick reaction shows you\'re there and paying attention.',
+      "- React to the user while you work to keep them engaged — don't leave them hanging in silence. A quick reaction shows you're there and paying attention.",
     ],
   },
   config: {
