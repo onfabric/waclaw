@@ -1,6 +1,10 @@
 import type { ChannelSetupWizard } from 'openclaw/plugin-sdk/channel-setup';
-import { createChannelPluginBase, createChatChannelPlugin } from 'openclaw/plugin-sdk/core';
-import { formatEdenError } from '#client.ts';
+import {
+  type ChannelPlugin,
+  createChannelPluginBase,
+  createChatChannelPlugin,
+} from 'openclaw/plugin-sdk/core';
+import { formatEdenError, SendMessageTypeEnum } from '#client.ts';
 import {
   applyAccountConfig,
   CHANNEL_ID,
@@ -39,6 +43,48 @@ const setupWizard: ChannelSetupWizard = {
   ],
 };
 
+const actions: NonNullable<ChannelPlugin['actions']> = {
+  describeMessageTool: () => ({ actions: ['react'] as const }),
+  handleAction: async (ctx) => {
+    if (ctx.action !== 'react') {
+      return {
+        content: [{ type: 'text', text: `Unsupported action: ${ctx.action}` }],
+        details: {},
+      };
+    }
+
+    const runtime = getRuntime();
+    const account = resolveAccount(ctx.cfg, ctx.accountId);
+    if (!account.connectorToken) {
+      throw new Error('waclaw: connectorToken is not configured');
+    }
+
+    const messageId = ctx.params.messageId as string | undefined;
+    const emoji = (ctx.params.emoji as string | undefined) ?? '';
+
+    if (!messageId) {
+      return { content: [{ type: 'text', text: 'Missing messageId for reaction' }], details: {} };
+    }
+
+    const res = await runtime.client('/send', {
+      method: 'POST',
+      body: {
+        type: SendMessageTypeEnum.reaction,
+        connector_token: account.connectorToken,
+        wa_message_id: messageId,
+        emoji,
+      },
+    });
+
+    if (res.error) {
+      throw new Error(`waclaw react failed: ${formatEdenError(res.error)}`);
+    }
+
+    const action = emoji ? `Reacted with ${emoji}` : 'Removed reaction';
+    return { content: [{ type: 'text', text: action }], details: {} };
+  },
+};
+
 const base = createChannelPluginBase({
   id: CHANNEL_ID,
   meta: {
@@ -49,6 +95,7 @@ const base = createChannelPluginBase({
   },
   capabilities: {
     chatTypes: ['direct'],
+    reactions: true,
   },
   config: {
     listAccountIds,
@@ -63,7 +110,7 @@ const base = createChannelPluginBase({
 });
 
 export const waclawPlugin = createChatChannelPlugin({
-  base: { ...base, capabilities: base.capabilities!, config: base.config! },
+  base: { ...base, capabilities: base.capabilities!, config: base.config!, actions },
   security: {
     dm: {
       channelKey: CHANNEL_ID,
@@ -87,6 +134,7 @@ export const waclawPlugin = createChatChannelPlugin({
       const res = await runtime.client('/send', {
         method: 'POST',
         body: {
+          type: SendMessageTypeEnum.text,
           connector_token: account.connectorToken,
           text: ctx.text,
           message_id: messageId,

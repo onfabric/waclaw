@@ -1,6 +1,6 @@
 import { dispatchInboundDirectDmWithRuntime } from 'openclaw/plugin-sdk/channel-inbound';
 import type { OpenClawPluginService, OpenClawPluginServiceContext } from 'openclaw/plugin-sdk/core';
-import { formatEdenError } from '#client.ts';
+import { formatEdenError, SendMessageTypeEnum } from '#client.ts';
 import { CHANNEL_ID, CHANNEL_NAME, resolveAccount } from '#config.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
@@ -100,6 +100,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
           const { error } = await runtime.client('/send', {
             method: 'POST',
             body: {
+              type: SendMessageTypeEnum.text,
               connector_token: connectorToken,
               text: payload.text,
               message_id: payload.replyToId || data.wa_message_id,
