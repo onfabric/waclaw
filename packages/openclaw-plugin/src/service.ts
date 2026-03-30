@@ -1,5 +1,6 @@
 import { dispatchInboundDirectDmWithRuntime } from 'openclaw/plugin-sdk/channel-inbound';
-import type { OpenClawPluginService, OpenClawPluginServiceContext } from 'openclaw/plugin-sdk/core';
+import { shouldAckReaction, type AckReactionScope } from 'openclaw/plugin-sdk/channel-feedback';
+import type { OpenClawConfig, OpenClawPluginService, OpenClawPluginServiceContext } from 'openclaw/plugin-sdk/core';
 import { formatEdenError, SendMessageTypeEnum } from '#client.ts';
 import { CHANNEL_ID, CHANNEL_NAME, resolveAccount } from '#config.ts';
 import type { WaclawRuntime } from '#runtime.ts';
@@ -23,6 +24,51 @@ function isPollTimeoutError(error: { status: number; value?: unknown }): boolean
     error.status === HTTP_STATUS_REQUEST_TIMEOUT_408 ||
     error.status === HTTP_STATUS_SERVICE_UNAVAILABLE_503
   );
+}
+
+function maybeSendAckReaction(params: {
+  runtime: WaclawRuntime;
+  cfg: OpenClawConfig;
+  connectorToken: string;
+  waMessageId: string;
+  logger: OpenClawPluginServiceContext['logger'];
+}): void {
+  const emoji = (params.cfg.messages?.ackReaction ?? '').trim();
+  if (!emoji) return;
+
+  const scope = params.cfg.messages?.ackReactionScope as AckReactionScope | undefined;
+  const shouldReact = shouldAckReaction({
+    scope,
+    isDirect: true,
+    isGroup: false,
+    isMentionableGroup: false,
+    requireMention: false,
+    canDetectMention: false,
+    effectiveWasMentioned: false,
+  });
+
+  if (!shouldReact) return;
+
+  params.logger.info(`waclaw: sending ack reaction ${emoji} for message ${params.waMessageId}`);
+
+  params.runtime
+    .client('/send', {
+      method: 'POST',
+      body: {
+        type: SendMessageTypeEnum.reaction,
+        connector_token: params.connectorToken,
+        wa_message_id: params.waMessageId,
+        emoji,
+      },
+    })
+    .then(({ error }) => {
+      if (error) {
+        params.logger.warn(`waclaw: ack reaction failed: ${formatEdenError(error)}`);
+      }
+    })
+    .catch((err) => {
+      params.logger.warn(`waclaw: ack reaction failed: ${err}`);
+    });
 }
 
 export function createWaclawService(runtime: WaclawRuntime): OpenClawPluginService {
@@ -76,6 +122,14 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
       ctx.logger.info(
         `waclaw: received message from ${data.sender_phone} (message length: ${data.body.length})`,
       );
+
+      maybeSendAckReaction({
+        runtime,
+        cfg: ctx.config,
+        connectorToken,
+        waMessageId: data.wa_message_id,
+        logger: ctx.logger,
+      });
 
       await dispatchInboundDirectDmWithRuntime({
         cfg: ctx.config,

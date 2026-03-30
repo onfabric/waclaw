@@ -10,7 +10,7 @@ export const sendController = new Elysia()
   .use(WhatsAppServicePlugin)
   .post(
     '/send',
-    async ({ body, routeService, whatsappService, status }) => {
+    async ({ body, routeService, whatsappService, logger, status }) => {
       const route = routeService.getByConnectorToken({ connectorToken: body.connector_token });
 
       const message: SendMessageOptions =
@@ -22,6 +22,12 @@ export const sendController = new Elysia()
               emoji: body.emoji,
             }
           : { type: 'text', to: route.sender_phone, text: body.text };
+
+      logger.info(
+        message.type === 'text'
+          ? `send: type=text to=${route.sender_phone} size=${message.text.length}`
+          : `send: type=reaction to=${route.sender_phone} emoji=${message.emoji}`,
+      );
 
       await whatsappService.sendMessage(message);
 
