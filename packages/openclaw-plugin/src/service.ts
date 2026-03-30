@@ -1,4 +1,4 @@
-import { type AckReactionScope, shouldAckReaction } from 'openclaw/plugin-sdk/channel-feedback';
+import { removeAckReactionAfterReply } from 'openclaw/plugin-sdk/channel-feedback';
 import { dispatchInboundDirectDmWithRuntime } from 'openclaw/plugin-sdk/channel-inbound';
 import type {
   OpenClawConfig,
@@ -8,6 +8,8 @@ import type {
 import { formatEdenError, SendMessageTypeEnum } from '#client.ts';
 import { CHANNEL_ID, CHANNEL_NAME, resolveAccount } from '#config.ts';
 import type { WaclawRuntime } from '#runtime.ts';
+
+const EMOJI_REACTION = '👀';
 
 const HTTP_STATUS_REQUEST_TIMEOUT_408 = 408;
 const HTTP_STATUS_SERVICE_UNAVAILABLE_503 = 503;
@@ -30,52 +32,65 @@ function isPollTimeoutError(error: { status: number; value?: unknown }): boolean
   );
 }
 
+type AckReactionResult = {
+  sendPromise: Promise<boolean>;
+};
+
 function maybeSendAckReaction(params: {
   runtime: WaclawRuntime;
   cfg: OpenClawConfig;
   connectorToken: string;
   waMessageId: string;
   logger: OpenClawPluginServiceContext['logger'];
-}): void {
-  const emoji = (params.cfg.messages?.ackReaction ?? '').trim();
-  if (!emoji) {
-    return;
-  }
+}): AckReactionResult {
+  params.logger.info(
+    `waclaw: sending ack reaction ${EMOJI_REACTION} for message ${params.waMessageId}`,
+  );
 
-  const scope = params.cfg.messages?.ackReactionScope as AckReactionScope | undefined;
-  const shouldReact = shouldAckReaction({
-    scope,
-    isDirect: true,
-    isGroup: false,
-    isMentionableGroup: false,
-    requireMention: false,
-    canDetectMention: false,
-    effectiveWasMentioned: false,
-  });
-
-  if (!shouldReact) {
-    return;
-  }
-
-  params.logger.info(`waclaw: sending ack reaction ${emoji} for message ${params.waMessageId}`);
-
-  params.runtime
+  const sendPromise = params.runtime
     .client('/send', {
       method: 'POST',
       body: {
         type: SendMessageTypeEnum.reaction,
         connector_token: params.connectorToken,
         wa_message_id: params.waMessageId,
-        emoji,
+        emoji: EMOJI_REACTION,
       },
     })
     .then(({ error }) => {
       if (error) {
         params.logger.warn(`waclaw: ack reaction failed: ${formatEdenError(error)}`);
+        return false;
       }
+      return true;
     })
     .catch((err) => {
       params.logger.warn(`waclaw: ack reaction failed: ${err}`);
+      return false;
+    });
+
+  return { sendPromise };
+}
+
+async function sendRemoveReaction(params: {
+  runtime: WaclawRuntime;
+  connectorToken: string;
+  waMessageId: string;
+}): Promise<void> {
+  await params.runtime
+    .client('/send', {
+      method: 'POST',
+      body: {
+        type: SendMessageTypeEnum.reaction,
+        connector_token: params.connectorToken,
+        wa_message_id: params.waMessageId,
+        emoji: '',
+      },
+    })
+    .then(({ error }) => {
+      if (error) {
+        throw new Error(formatEdenError(error));
+      }
     });
 }
 
@@ -131,7 +146,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         `waclaw: received message from ${data.sender_phone} (message length: ${data.body.length})`,
       );
 
-      maybeSendAckReaction({
+      const ackReaction = maybeSendAckReaction({
         runtime,
         cfg: ctx.config,
         connectorToken,
@@ -178,6 +193,20 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         onRecordError: (err) => ctx.logger.error(`waclaw: session record error: ${err}`),
         onDispatchError: (err, info) =>
           ctx.logger.error(`waclaw: dispatch error [${info.kind}]: ${err}`),
+      });
+
+      removeAckReactionAfterReply({
+        removeAfterReply: ctx.config.messages?.removeAckAfterReply ?? false,
+        ackReactionPromise: ackReaction.sendPromise,
+        ackReactionValue: EMOJI_REACTION,
+        remove: async () => {
+          await sendRemoveReaction({
+            runtime,
+            connectorToken,
+            waMessageId: data.wa_message_id,
+          });
+        },
+        onError: (err) => ctx.logger.warn(`waclaw: remove ack reaction failed: ${err}`),
       });
     } catch (err) {
       ctx.logger.error(`waclaw: poll error: ${err}`);

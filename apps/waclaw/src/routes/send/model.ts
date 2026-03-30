@@ -12,7 +12,7 @@ const SendReactionBodySchema = t.Object({
   type: t.Literal(SendMessageTypeEnum.reaction),
   connector_token: t.String({ minLength: 1 }),
   wa_message_id: t.String({ minLength: 1 }),
-  emoji: t.String(),
+  emoji: t.String({ description: 'Empty string to remove the reaction' }),
 });
 
 export const CreateSendBodySchema = t.Union([SendTextBodySchema, SendReactionBodySchema]);
