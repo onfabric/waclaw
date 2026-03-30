@@ -1,6 +1,10 @@
+import { type AckReactionScope, shouldAckReaction } from 'openclaw/plugin-sdk/channel-feedback';
 import { dispatchInboundDirectDmWithRuntime } from 'openclaw/plugin-sdk/channel-inbound';
-import { shouldAckReaction, type AckReactionScope } from 'openclaw/plugin-sdk/channel-feedback';
-import type { OpenClawConfig, OpenClawPluginService, OpenClawPluginServiceContext } from 'openclaw/plugin-sdk/core';
+import type {
+  OpenClawConfig,
+  OpenClawPluginService,
+  OpenClawPluginServiceContext,
+} from 'openclaw/plugin-sdk/core';
 import { formatEdenError, SendMessageTypeEnum } from '#client.ts';
 import { CHANNEL_ID, CHANNEL_NAME, resolveAccount } from '#config.ts';
 import type { WaclawRuntime } from '#runtime.ts';
@@ -34,7 +38,9 @@ function maybeSendAckReaction(params: {
   logger: OpenClawPluginServiceContext['logger'];
 }): void {
   const emoji = (params.cfg.messages?.ackReaction ?? '').trim();
-  if (!emoji) return;
+  if (!emoji) {
+    return;
+  }
 
   const scope = params.cfg.messages?.ackReactionScope as AckReactionScope | undefined;
   const shouldReact = shouldAckReaction({
@@ -47,7 +53,9 @@ function maybeSendAckReaction(params: {
     effectiveWasMentioned: false,
   });
 
-  if (!shouldReact) return;
+  if (!shouldReact) {
+    return;
+  }
 
   params.logger.info(`waclaw: sending ack reaction ${emoji} for message ${params.waMessageId}`);
 
