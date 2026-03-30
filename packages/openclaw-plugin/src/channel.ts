@@ -53,6 +53,11 @@ const actions: NonNullable<ChannelPlugin['actions']> = {
   supportsAction: ({ action }) => {
     return SUPPORTED_ACTIONS.includes(action);
   },
+  // Without this override, core's default extractToolSend reads the "to" param
+  // from the agent's tool call and tries to resolve it as a recipient — which
+  // fails for react since there's no recipient, only a messageId. Returning null
+  // skips target resolution and routes straight to handleAction.
+  extractToolSend: () => null,
   handleAction: async (ctx) => {
     if (ctx.action !== 'react') {
       return {
@@ -125,7 +130,21 @@ const base = createChannelPluginBase({
 });
 
 export const waclawPlugin = createChatChannelPlugin({
-  base: { ...base, capabilities: base.capabilities!, config: base.config!, actions },
+  base: {
+    ...base,
+    capabilities: base.capabilities!,
+    config: base.config!,
+    actions,
+    // Core runs resolveActionTarget for all message tool actions — including react.
+    // Without a targetResolver, any "to" value the agent passes (e.g. "default")
+    // fails directory lookup. Since waclaw is DM-only and react targets a messageId
+    // (not a recipient), we accept any input as-is.
+    messaging: {
+      targetResolver: {
+        resolveTarget: async ({ input }) => ({ to: input, kind: 'user' }),
+      },
+    },
+  },
   security: {
     dm: {
       channelKey: CHANNEL_ID,
