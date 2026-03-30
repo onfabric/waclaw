@@ -13,7 +13,7 @@ export class RouteRepository extends Repository {
   private readonly stmtGetByConnectorToken: Statement<Route, [string]>;
   private readonly stmtGetBySenderPhone: Statement<Route, [string]>;
   private readonly stmtCreate: Statement<Route, [string, string, string]>;
-  private readonly stmtDelete: Statement<void, [string]>;
+  private readonly stmtDelete: Statement<Pick<Route, 'id'>, [string]>;
   private readonly stmtList: Statement<Route, []>;
   private readonly stmtSetLastPolledAtToNow: Statement<void, [string]>;
 
@@ -28,7 +28,9 @@ export class RouteRepository extends Repository {
     this.stmtCreate = db.query<Route, [string, string, string]>(
       'INSERT INTO routes (id, connector_token, sender_phone) VALUES (?, ?, ?) RETURNING *',
     );
-    this.stmtDelete = db.query<void, [string]>('DELETE FROM routes WHERE connector_token = ?');
+    this.stmtDelete = db.query<Pick<Route, 'id'>, [string]>(
+      'DELETE FROM routes WHERE connector_token = ? RETURNING id',
+    );
     this.stmtList = db.query<Route, []>('SELECT * FROM routes');
     this.stmtSetLastPolledAtToNow = db.query<void, [string]>(
       'UPDATE routes SET last_polled_at = unixepoch() WHERE connector_token = ?',
@@ -63,8 +65,8 @@ export class RouteRepository extends Repository {
     }
   }
 
-  delete({ connectorToken }: { connectorToken: string }): void {
-    this.stmtDelete.run(connectorToken);
+  delete({ connectorToken }: { connectorToken: string }): string | null {
+    return this.stmtDelete.get(connectorToken)?.id ?? null;
   }
 
   list(): Route[] {
