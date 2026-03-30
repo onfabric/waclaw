@@ -24,3 +24,5 @@ export function formatEdenError(error: { status: number; value?: unknown }): str
   }
   return `status=${error.status}`;
 }
+
+export { SendMessageTypeEnum } from '@repo/waclaw/types';
