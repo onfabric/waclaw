@@ -200,11 +200,13 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         ackReactionPromise: ackReaction.sendPromise,
         ackReactionValue: EMOJI_REACTION,
         remove: async () => {
-          await sendRemoveReaction({
-            runtime,
-            connectorToken,
-            waMessageId: data.wa_message_id,
-          });
+          // Only remove if the agent didn't react — on WhatsApp, the agent's
+          // reaction replaced the ack, so removing would wipe it.
+          const hasAgentReacted = runtime.agentReactedMessageIds.delete(data.wa_message_id);
+          if (hasAgentReacted) {
+            ctx.logger.info('waclaw: skipping emoji removal as it was set by the agent');
+          }
+          await sendRemoveReaction({ runtime, connectorToken, waMessageId: data.wa_message_id });
         },
         onError: (err) => ctx.logger.warn(`waclaw: remove ack reaction failed: ${err}`),
       });

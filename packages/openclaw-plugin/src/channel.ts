@@ -94,6 +94,10 @@ const actions: NonNullable<ChannelPlugin['actions']> = {
       throw new Error(`waclaw react failed: ${formatEdenError(res.error)}`);
     }
 
+    if (emoji) {
+      runtime.agentReactedMessageIds.add(messageId);
+    }
+
     const action = emoji ? `Reacted with ${emoji}` : 'Removed reaction';
     return { content: [{ type: 'text', text: action }], details: {} };
   },

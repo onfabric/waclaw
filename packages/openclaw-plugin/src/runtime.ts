@@ -5,6 +5,8 @@ export type WaclawRuntime = {
   client: WaclawClient;
   pluginRuntime: PluginRuntime;
   isStopped: boolean;
+  /** Message IDs the agent has reacted to via the react action. */
+  agentReactedMessageIds: Set<string>;
 };
 
 let _runtime: WaclawRuntime | undefined;
@@ -14,6 +16,7 @@ export function createRuntime(pluginRuntime: PluginRuntime) {
     client: createWaclawClient(),
     pluginRuntime,
     isStopped: false,
+    agentReactedMessageIds: new Set(),
   };
 }
 
