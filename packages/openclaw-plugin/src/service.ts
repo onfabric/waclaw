@@ -196,7 +196,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
       });
 
       removeAckReactionAfterReply({
-        removeAfterReply: ctx.config.messages?.removeAckAfterReply ?? false,
+        removeAfterReply: true,
         ackReactionPromise: ackReaction.sendPromise,
         ackReactionValue: EMOJI_REACTION,
         remove: async () => {
