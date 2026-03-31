@@ -1,6 +1,8 @@
 import { Elysia } from 'elysia';
 import { db } from '#db/client.ts';
+import { env } from '#lib/env.ts';
 import { logger } from '#lib/logger.ts';
+import { whatsappClient } from '#lib/whatsapp-client.ts';
 import { HealthRepository } from '#repositories/health.repository.ts';
 import { MessageRepository } from '#repositories/message.repository.ts';
 import { RouteRepository } from '#repositories/route.repository.ts';
@@ -19,7 +21,7 @@ const healthRepo = new HealthRepository(db);
 // Services
 const routeService = new RouteService(routeRepo);
 const pollService = new PollService(messageRepo);
-const whatsappService = new WhatsAppService();
+const whatsappService = new WhatsAppService(whatsappClient, env.metaPhoneNumberId);
 const messageService = new MessageService(routeService, messageRepo, pollService);
 const webhookService = new WebhookService(messageService);
 const healthService = new HealthService(healthRepo);
