@@ -17,6 +17,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@kapso/whatsapp-cloud-api": "^0.2.1",
     "elysia": "^1.4.28"
   }
 }

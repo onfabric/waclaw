@@ -18,6 +18,7 @@
     "apps/waclaw": {
       "name": "@repo/waclaw",
       "dependencies": {
+        "@kapso/whatsapp-cloud-api": "^0.2.1",
         "elysia": "^1.4.28",
       },
       "devDependencies": {
@@ -245,6 +246,8 @@
     "@img/sharp-win32-x64": ["@img/sharp-win32-x64@0.34.5", "", { "os": "win32", "cpu": "x64" }, "sha512-+29YMsqY2/9eFEiW93eqWnuLcWcufowXewwSNIT6UwZdUUCrM3oFjMWH/Z6/TMmb4hlFenmfAVbpWeup2jryCw=="],
 
     "@isaacs/fs-minipass": ["@isaacs/fs-minipass@4.0.1", "", { "dependencies": { "minipass": "^7.0.4" } }, "sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w=="],
+
+    "@kapso/whatsapp-cloud-api": ["@kapso/whatsapp-cloud-api@0.2.1", "", { "dependencies": { "zod": "^4.1.11" } }, "sha512-+piFK74eARsLqabxssAnMnWUyGPbO3oPhWrQNagu+70alo9RoapRNfzG9bx4nOOgxlKbv/c7s2mo2j8K3qq9kg=="],
 
     "@line/bot-sdk": ["@line/bot-sdk@10.6.0", "", { "dependencies": { "@types/node": "^24.0.0" }, "optionalDependencies": { "axios": "^1.7.4" } }, "sha512-4hSpglL/G/cW2JCcohaYz/BS0uOSJNV9IEYdMm0EiPEvDLayoI2hGq2D86uYPQFD2gvgkyhmzdShpWLG3P5r3w=="],
 
