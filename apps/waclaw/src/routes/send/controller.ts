@@ -26,7 +26,7 @@ export const sendController = new Elysia()
       logger.info(
         message.type === 'text'
           ? `send: type=text to=${route.sender_phone} size=${message.text.length}`
-          : `send: type=reaction to=${route.sender_phone} emoji=${message.emoji}`,
+          : `send: type=reaction to=${route.sender_phone} emoji=${message.emoji || '<empty>'}`,
       );
 
       await whatsappService.sendMessage(message);
