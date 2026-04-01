@@ -21,7 +21,14 @@ type SendReactionMessage = {
   emoji: string;
 };
 
-export type SendMessageOptions = SendTextMessage | SendReactionMessage;
+type SendAudioMessage = {
+  type: 'audio';
+  to: string;
+  base64Data: string;
+  mimeType: string;
+};
+
+export type SendMessageOptions = SendTextMessage | SendReactionMessage | SendAudioMessage;
 
 export type MediaDownload = {
   data: Buffer;
@@ -74,6 +81,21 @@ export class WhatsAppService extends Service {
           reaction: { messageId: message.messageId, emoji: message.emoji },
         });
         break;
+      case 'audio': {
+        const audioBuffer = Buffer.from(message.base64Data, 'base64');
+        const file = new File([audioBuffer], 'audio', { type: message.mimeType });
+        const { id: mediaId } = await this.whatsappClient.media.upload({
+          phoneNumberId: this.metaPhoneNumberId,
+          type: message.mimeType,
+          file,
+        });
+        await this.whatsappClient.messages.sendAudio({
+          phoneNumberId: this.metaPhoneNumberId,
+          to,
+          audio: { id: mediaId },
+        });
+        break;
+      }
     }
   }
 }

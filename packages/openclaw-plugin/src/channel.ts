@@ -15,6 +15,7 @@ import {
   listAccountIds,
   resolveAccount,
 } from '#config.ts';
+import { readAudioFile } from '#media.ts';
 import { getRuntime } from '#runtime.ts';
 
 const SUPPORTED_ACTIONS: ChannelMessageActionName[] = ['react'];
@@ -190,6 +191,73 @@ export const waclawPlugin = createChatChannelPlugin({
 
       if (res.error) {
         throw new Error(`waclaw send failed: ${formatEdenError(res.error)}`);
+      }
+
+      return { channel: CHANNEL_ID, messageId };
+    },
+    sendMedia: async (ctx) => {
+      const runtime = getRuntime();
+      const account = resolveAccount(ctx.cfg, ctx.accountId);
+      if (!account.connectorToken) {
+        throw new Error('waclaw: connectorToken is not configured');
+      }
+
+      const mediaUrl = ctx.mediaUrl;
+      if (!mediaUrl) {
+        throw new Error('waclaw: sendMedia called without mediaUrl');
+      }
+
+      const audio = await readAudioFile(mediaUrl);
+      if (!audio) {
+        // Not an audio file — fall back to sending just the text caption
+        if (ctx.text) {
+          const messageId = crypto.randomUUID();
+          const res = await runtime.client('/send', {
+            method: 'POST',
+            body: {
+              type: SendMessageTypeEnum.text,
+              connector_token: account.connectorToken,
+              text: ctx.text,
+              message_id: messageId,
+            },
+          });
+          if (res.error) {
+            throw new Error(`waclaw send failed: ${formatEdenError(res.error)}`);
+          }
+          return { channel: CHANNEL_ID, messageId };
+        }
+        throw new Error(`waclaw: unsupported media type for ${mediaUrl}`);
+      }
+
+      const messageId = crypto.randomUUID();
+
+      const res = await runtime.client('/send', {
+        method: 'POST',
+        body: {
+          type: SendMessageTypeEnum.audio,
+          connector_token: account.connectorToken,
+          base64_data: audio.base64Data,
+          mime_type: audio.mimeType,
+          message_id: messageId,
+        },
+      });
+
+      if (res.error) {
+        throw new Error(`waclaw sendMedia failed: ${formatEdenError(res.error)}`);
+      }
+
+      if (ctx.text) {
+        const textRes = await runtime.client('/send', {
+          method: 'POST',
+          body: {
+            type: SendMessageTypeEnum.text,
+            connector_token: account.connectorToken,
+            text: ctx.text,
+          },
+        });
+        if (textRes.error) {
+          throw new Error(`waclaw send caption failed: ${formatEdenError(textRes.error)}`);
+        }
       }
 
       return { channel: CHANNEL_ID, messageId };
