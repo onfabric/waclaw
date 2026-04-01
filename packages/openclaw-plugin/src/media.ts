@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { extname, join } from 'node:path';
 
 const OPENCLAW_TMP_DIR = '/tmp/openclaw';
 
@@ -17,7 +17,23 @@ const MIME_TO_EXT: Record<string, string> = {
   'audio/amr': '.amr',
   'audio/ogg': '.ogg',
   'audio/opus': '.opus',
+  'audio/wav': '.wav',
 };
+
+const EXT_TO_AUDIO_MIME: Record<string, string> = {
+  '.ogg': 'audio/ogg',
+  '.opus': 'audio/ogg',
+  '.mp3': 'audio/mpeg',
+  '.m4a': 'audio/mp4',
+  '.aac': 'audio/aac',
+  '.amr': 'audio/amr',
+  '.wav': 'audio/wav',
+};
+
+export function resolveAudioMimeType(filePath: string): string | undefined {
+  const ext = extname(filePath).toLowerCase();
+  return EXT_TO_AUDIO_MIME[ext];
+}
 
 export async function writeMediaToTempFile(params: {
   base64Data: string;
