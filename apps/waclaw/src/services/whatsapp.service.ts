@@ -83,10 +83,11 @@ export class WhatsAppService extends Service {
         break;
       case 'audio': {
         const audioBuffer = Buffer.from(message.base64Data, 'base64');
+        const file = new File([audioBuffer], 'audio', { type: message.mimeType });
         const { id: mediaId } = await this.whatsappClient.media.upload({
           phoneNumberId: this.metaPhoneNumberId,
           type: message.mimeType,
-          file: audioBuffer,
+          file,
         });
         await this.whatsappClient.messages.sendAudio({
           phoneNumberId: this.metaPhoneNumberId,
