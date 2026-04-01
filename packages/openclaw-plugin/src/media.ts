@@ -40,10 +40,6 @@ export type AudioPayload = {
   mimeType: string;
 };
 
-/**
- * Reads a local audio file and returns its base64-encoded data and MIME type.
- * Returns undefined if the file is not a recognized audio format.
- */
 export async function readAudioFile(filePath: string): Promise<AudioPayload | undefined> {
   const mimeType = resolveAudioMimeType(filePath);
   if (!mimeType) return undefined;

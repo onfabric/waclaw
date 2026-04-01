@@ -246,7 +246,6 @@ export const waclawPlugin = createChatChannelPlugin({
         throw new Error(`waclaw sendMedia failed: ${formatEdenError(res.error)}`);
       }
 
-      // If there's a text caption, send it as a follow-up text message
       if (ctx.text) {
         const textRes = await runtime.client('/send', {
           method: 'POST',
