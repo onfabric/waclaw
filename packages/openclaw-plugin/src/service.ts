@@ -1,6 +1,3 @@
-import { randomUUID } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import { dispatchInboundDirectDmWithRuntime } from 'openclaw/plugin-sdk/channel-inbound';
 import type {
   OpenClawConfig,
@@ -9,6 +6,7 @@ import type {
 } from 'openclaw/plugin-sdk/core';
 import { formatEdenError, SendMessageTypeEnum } from '#client.ts';
 import { CHANNEL_ID, CHANNEL_NAME, resolveAccount } from '#config.ts';
+import { writeMediaToTempFile } from '#media.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
 const EMOJI_REACTION = '👀';
@@ -22,24 +20,6 @@ const POLL_ERROR_RETRY_INTERVAL_MS = 5000;
 const POLL_CLIENT_TIMEOUT_MS = 35_000;
 
 const CONFIGURE_PLUGIN_HINT = 'run `openclaw configure` to set it up, then restart the gateway';
-
-const OPENCLAW_TMP_DIR = '/tmp/openclaw';
-
-const MIME_TO_EXT: Record<string, string> = {
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-  'image/webp': '.webp',
-  'image/gif': '.gif',
-};
-
-async function writeMediaToTempFile(base64Data: string, mimeType: string): Promise<string> {
-  const dir = join(OPENCLAW_TMP_DIR, `waclaw-media-${randomUUID()}`);
-  await mkdir(dir, { recursive: true });
-  const ext = MIME_TO_EXT[mimeType] ?? '.bin';
-  const filePath = join(dir, `media${ext}`);
-  await writeFile(filePath, Buffer.from(base64Data, 'base64'));
-  return filePath;
-}
 
 function isPollTimeoutError(error: { status: number; value?: unknown }): boolean {
   // 408: server explicitly signalled no messages during the park window.
@@ -162,18 +142,22 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         ctx.logger.warn(`waclaw: received message with missing sender_phone, skipping`);
         continue;
       }
-      const hasMedia = 'media' in data && data.media !== null;
+
+      let messageContent = data.body;
+
       ctx.logger.info(
-        `waclaw: received message from ${data.sender_phone} (body length: ${data.body.length}${hasMedia ? `, media: ${data.media!.mime_type}` : ''})`,
+        `waclaw: received message from ${data.sender_phone} (body length: ${data.body.length})`,
       );
 
       let extraContext: Record<string, unknown> | undefined;
-      if (hasMedia) {
+      if (data.media) {
+        ctx.logger.info(`waclaw: message has media (mime type: ${data.media.mime_type})`);
         try {
-          const mediaPath = await writeMediaToTempFile(
-            data.media!.base64Data,
-            data.media!.mime_type,
-          );
+          const mediaPath = await writeMediaToTempFile({
+            base64Data: data.media.base64Data,
+            mimeType: data.media.mime_type,
+          });
+          messageContent = messageContent || '[media]';
           extraContext = {
             MediaPath: mediaPath,
             MediaType: data.media!.mime_type,
@@ -203,7 +187,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         senderAddress: data.sender_phone,
         recipientAddress: accountId,
         conversationLabel: data.sender_phone,
-        rawBody: data.body || (hasMedia ? '[image]' : ''),
+        rawBody: messageContent,
         messageId: data.wa_message_id,
         ...(extraContext && { extraContext }),
         deliver: async (payload) => {

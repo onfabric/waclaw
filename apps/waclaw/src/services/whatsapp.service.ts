@@ -52,14 +52,7 @@ export class WhatsAppService extends Service {
       throw new Error(`media download failed: ${response.status} ${response.statusText}`);
     }
     const data = Buffer.from(await response.arrayBuffer());
-    const contentType = response.headers.get('content-type');
-    // Prefer the MIME type from the webhook payload (hintMimeType) — the
-    // download response may return application/json on error or when served
-    // through a proxy, which is never the actual media type.
-    const mimeType =
-      hintMimeType ??
-      (contentType && !contentType.startsWith('application/json') ? contentType : null) ??
-      UNKNOWN_MIME_TYPE;
+    const mimeType = hintMimeType ?? response.headers.get('content-type') ?? UNKNOWN_MIME_TYPE;
     return { data, mimeType };
   }
 
