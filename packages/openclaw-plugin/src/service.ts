@@ -6,7 +6,7 @@ import type {
 } from 'openclaw/plugin-sdk/core';
 import { formatEdenError, SendMessageTypeEnum } from '#client.ts';
 import { CHANNEL_ID, CHANNEL_NAME, resolveAccount } from '#config.ts';
-import { readAudioFile, writeMediaToTempFile } from '#media.ts';
+import { readMediaFile, resolveMediaSendType, writeMediaToTempFile } from '#media.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
 enum AckEmoji {
@@ -222,23 +222,28 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
           }
 
           if (mediaUrl) {
-            const audio = await readAudioFile(mediaUrl);
-            if (audio) {
+            const media = await readMediaFile(mediaUrl);
+            if (media) {
+              const sendType = resolveMediaSendType(media.mimeType);
+              if (!sendType) {
+                ctx.logger.warn(`waclaw: unsupported media mime type ${media.mimeType}, skipping media`);
+                return;
+              }
               const { error } = await runtime.client('/send', {
                 method: 'POST',
                 body: {
-                  type: SendMessageTypeEnum.audio,
+                  type: sendType,
                   connector_token: connectorToken,
-                  base64_data: audio.base64Data,
-                  mime_type: audio.mimeType,
+                  base64_data: media.base64Data,
+                  mime_type: media.mimeType,
                   message_id: payload.replyToId || data.wa_message_id,
                 },
               });
               if (error) {
-                throw new Error(`waclaw deliver audio failed: ${formatEdenError(error)}`);
+                throw new Error(`waclaw deliver ${sendType} failed: ${formatEdenError(error)}`);
               }
               ctx.logger.info(
-                `waclaw: delivered audio to ${data.sender_phone} (mime: ${audio.mimeType})`,
+                `waclaw: delivered ${sendType} to ${data.sender_phone} (mime: ${media.mimeType})`,
               );
             } else {
               ctx.logger.warn(`waclaw: unsupported media type for ${mediaUrl}, skipping media`);

@@ -25,10 +25,21 @@ const SendAudioBodySchema = t.Object({
   message_id: t.Optional(t.String({ minLength: 1 })),
 });
 
+const SendImageBodySchema = t.Object({
+  type: t.Literal(SendMessageTypeEnum.image),
+  connector_token: t.String({ minLength: 1 }),
+  /** Base64-encoded image data */
+  base64_data: t.String({ minLength: 1 }),
+  /** MIME type of the image (e.g. image/jpeg, image/png) */
+  mime_type: t.String({ minLength: 1 }),
+  message_id: t.Optional(t.String({ minLength: 1 })),
+});
+
 export const CreateSendBodySchema = t.Union([
   SendTextBodySchema,
   SendReactionBodySchema,
   SendAudioBodySchema,
+  SendImageBodySchema,
 ]);
 
 export const CreateSendResponseSchema = t.Object({

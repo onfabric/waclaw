@@ -15,7 +15,7 @@ import {
   listAccountIds,
   resolveAccount,
 } from '#config.ts';
-import { readAudioFile } from '#media.ts';
+import { readMediaFile, resolveMediaSendType } from '#media.ts';
 import { getRuntime } from '#runtime.ts';
 
 const SUPPORTED_ACTIONS: ChannelMessageActionName[] = ['react'];
@@ -207,9 +207,10 @@ export const waclawPlugin = createChatChannelPlugin({
         throw new Error('waclaw: sendMedia called without mediaUrl');
       }
 
-      const audio = await readAudioFile(mediaUrl);
-      if (!audio) {
-        // Not an audio file — fall back to sending just the text caption
+      const media = await readMediaFile(mediaUrl);
+
+      if (!media) {
+        // Not a supported media file — fall back to sending just the text caption
         if (ctx.text) {
           const messageId = crypto.randomUUID();
           const res = await runtime.client('/send', {
@@ -230,14 +231,18 @@ export const waclawPlugin = createChatChannelPlugin({
       }
 
       const messageId = crypto.randomUUID();
+      const sendType = resolveMediaSendType(media.mimeType);
+      if (!sendType) {
+        throw new Error(`waclaw: unsupported media mime type ${media.mimeType}`);
+      }
 
       const res = await runtime.client('/send', {
         method: 'POST',
         body: {
-          type: SendMessageTypeEnum.audio,
+          type: sendType,
           connector_token: account.connectorToken,
-          base64_data: audio.base64Data,
-          mime_type: audio.mimeType,
+          base64_data: media.base64Data,
+          mime_type: media.mimeType,
           message_id: messageId,
         },
       });
