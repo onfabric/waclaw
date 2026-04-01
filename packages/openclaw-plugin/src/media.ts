@@ -1,9 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
+import { SendMessageTypeEnum } from '#client.ts';
 
 const OPENCLAW_TMP_DIR = '/tmp/openclaw';
-
+/**
+ * OpenClaw may use this prefix for media paths.
+ */
+const MEDIA_URL_PREFIX = 'MEDIA:';
 const UNKNOWN_EXT = '.bin';
 
 const MIME_TO_EXT: Record<string, string> = {
@@ -20,7 +24,7 @@ const MIME_TO_EXT: Record<string, string> = {
   'audio/wav': '.wav',
 };
 
-const EXT_TO_AUDIO_MIME: Record<string, string> = {
+const EXT_TO_MIME: Record<string, string> = {
   '.ogg': 'audio/ogg',
   '.opus': 'audio/ogg',
   '.mp3': 'audio/mpeg',
@@ -28,21 +32,47 @@ const EXT_TO_AUDIO_MIME: Record<string, string> = {
   '.aac': 'audio/aac',
   '.amr': 'audio/amr',
   '.wav': 'audio/wav',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
 };
 
-export function resolveAudioMimeType(filePath: string): string | undefined {
-  const ext = extname(filePath).toLowerCase();
-  return EXT_TO_AUDIO_MIME[ext];
+type SendMediaType = SendMessageTypeEnum.audio | SendMessageTypeEnum.image;
+
+export function resolveMediaSendType(mimeType: string): SendMediaType | undefined {
+  if (mimeType.startsWith('audio/')) {
+    return SendMessageTypeEnum.audio;
+  }
+  if (mimeType.startsWith('image/')) {
+    return SendMessageTypeEnum.image;
+  }
+  return undefined;
 }
 
-export type AudioPayload = {
+export function sanitizeMediaUrl(mediaUrl: string): string {
+  if (mediaUrl.startsWith(MEDIA_URL_PREFIX)) {
+    return mediaUrl.slice(MEDIA_URL_PREFIX.length);
+  }
+  return mediaUrl;
+}
+
+export type MediaPayload = {
   base64Data: string;
   mimeType: string;
 };
 
-export async function readAudioFile(filePath: string): Promise<AudioPayload | undefined> {
-  const mimeType = resolveAudioMimeType(filePath);
-  if (!mimeType) return undefined;
+export function resolveMimeType(filePath: string): string | undefined {
+  const ext = extname(filePath).toLowerCase();
+  return EXT_TO_MIME[ext];
+}
+
+export async function readMediaFile(filePath: string): Promise<MediaPayload | undefined> {
+  const mimeType = resolveMimeType(filePath);
+  if (!mimeType) {
+    return undefined;
+  }
   const fileBuffer = await readFile(filePath);
   return { base64Data: fileBuffer.toString('base64'), mimeType };
 }

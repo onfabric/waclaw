@@ -31,6 +31,15 @@ export const sendController = new Elysia()
             mimeType: body.mime_type,
           };
           break;
+        case SendMessageTypeEnum.image:
+          message = {
+            type: 'image',
+            to: route.sender_phone,
+            base64Data: body.base64_data,
+            mimeType: body.mime_type,
+            caption: body.caption,
+          };
+          break;
         default:
           message = { type: 'text', to: route.sender_phone, text: body.text };
           break;
@@ -40,6 +49,7 @@ export const sendController = new Elysia()
         text: `send: type=text to=${route.sender_phone} size=${body.type === 'text' ? body.text.length : 0}`,
         reaction: `send: type=reaction to=${route.sender_phone} emoji=${body.type === 'reaction' ? body.emoji || '<empty>' : ''}`,
         audio: `send: type=audio to=${route.sender_phone} mime=${body.type === 'audio' ? body.mime_type : ''}`,
+        image: `send: type=image to=${route.sender_phone} mime=${body.type === 'image' ? body.mime_type : ''}`,
       };
       logger.info(logParts[body.type]);
 

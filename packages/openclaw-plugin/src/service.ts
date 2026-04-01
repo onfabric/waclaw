@@ -6,7 +6,12 @@ import type {
 } from 'openclaw/plugin-sdk/core';
 import { formatEdenError, SendMessageTypeEnum } from '#client.ts';
 import { CHANNEL_ID, CHANNEL_NAME, resolveAccount } from '#config.ts';
-import { readAudioFile, writeMediaToTempFile } from '#media.ts';
+import {
+  readMediaFile,
+  resolveMediaSendType,
+  sanitizeMediaUrl,
+  writeMediaToTempFile,
+} from '#media.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
 enum AckEmoji {
@@ -204,7 +209,8 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         messageId: data.wa_message_id,
         ...(extraContext && { extraContext }),
         deliver: async (payload) => {
-          const mediaUrl = payload.mediaUrl ?? payload.mediaUrls?.[0];
+          const rawMediaUrl = payload.mediaUrl ?? payload.mediaUrls?.[0];
+          const mediaUrl = rawMediaUrl ? sanitizeMediaUrl(rawMediaUrl) : undefined;
           if (!payload.text && !mediaUrl) {
             ctx.logger.warn(
               `waclaw: deliver called for ${data.sender_phone} with no text and no media, skipping`,
@@ -221,31 +227,63 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
             );
           }
 
+          let captionSent = false;
           if (mediaUrl) {
-            const audio = await readAudioFile(mediaUrl);
-            if (audio) {
-              const { error } = await runtime.client('/send', {
-                method: 'POST',
-                body: {
-                  type: SendMessageTypeEnum.audio,
-                  connector_token: connectorToken,
-                  base64_data: audio.base64Data,
-                  mime_type: audio.mimeType,
-                  message_id: payload.replyToId || data.wa_message_id,
-                },
-              });
-              if (error) {
-                throw new Error(`waclaw deliver audio failed: ${formatEdenError(error)}`);
+            const media = await readMediaFile(mediaUrl);
+            if (media) {
+              const sendType = resolveMediaSendType(media.mimeType);
+              if (!sendType) {
+                ctx.logger.warn(
+                  `waclaw: unsupported media mime type ${media.mimeType}, skipping media`,
+                );
+                return;
+              }
+              const messageId = payload.replyToId || data.wa_message_id;
+              switch (sendType) {
+                case SendMessageTypeEnum.image: {
+                  const { error } = await runtime.client('/send', {
+                    method: 'POST',
+                    body: {
+                      type: SendMessageTypeEnum.image,
+                      connector_token: connectorToken,
+                      base64_data: media.base64Data,
+                      mime_type: media.mimeType,
+                      caption: payload.text,
+                      message_id: messageId,
+                    },
+                  });
+                  if (error) {
+                    throw new Error(`waclaw deliver image failed: ${formatEdenError(error)}`);
+                  }
+                  captionSent = Boolean(payload.text);
+                  break;
+                }
+                case SendMessageTypeEnum.audio: {
+                  const { error } = await runtime.client('/send', {
+                    method: 'POST',
+                    body: {
+                      type: SendMessageTypeEnum.audio,
+                      connector_token: connectorToken,
+                      base64_data: media.base64Data,
+                      mime_type: media.mimeType,
+                      message_id: messageId,
+                    },
+                  });
+                  if (error) {
+                    throw new Error(`waclaw deliver audio failed: ${formatEdenError(error)}`);
+                  }
+                  break;
+                }
               }
               ctx.logger.info(
-                `waclaw: delivered audio to ${data.sender_phone} (mime: ${audio.mimeType})`,
+                `waclaw: delivered ${sendType} to ${data.sender_phone} (mime: ${media.mimeType})`,
               );
             } else {
               ctx.logger.warn(`waclaw: unsupported media type for ${mediaUrl}, skipping media`);
             }
           }
 
-          if (payload.text) {
+          if (payload.text && !captionSent) {
             const { error } = await runtime.client('/send', {
               method: 'POST',
               body: {

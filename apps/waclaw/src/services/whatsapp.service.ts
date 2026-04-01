@@ -28,7 +28,19 @@ type SendAudioMessage = {
   mimeType: string;
 };
 
-export type SendMessageOptions = SendTextMessage | SendReactionMessage | SendAudioMessage;
+type SendImageMessage = {
+  type: 'image';
+  to: string;
+  base64Data: string;
+  mimeType: string;
+  caption?: string;
+};
+
+export type SendMessageOptions =
+  | SendTextMessage
+  | SendReactionMessage
+  | SendAudioMessage
+  | SendImageMessage;
 
 export type MediaDownload = {
   data: Buffer;
@@ -63,6 +75,24 @@ export class WhatsAppService extends Service {
     return { data, mimeType };
   }
 
+  private async uploadMedia({
+    base64Data,
+    mimeType,
+  }: {
+    base64Data: string;
+    mimeType: string;
+  }): Promise<string> {
+    const buffer = Buffer.from(base64Data, 'base64');
+    const file = new File([buffer], 'media', { type: mimeType });
+
+    const { id } = await this.whatsappClient.media.upload({
+      phoneNumberId: this.metaPhoneNumberId,
+      type: mimeType,
+      file,
+    });
+    return id;
+  }
+
   async sendMessage(message: SendMessageOptions): Promise<void> {
     const to = toMetaFormat(message.to);
 
@@ -82,17 +112,26 @@ export class WhatsAppService extends Service {
         });
         break;
       case 'audio': {
-        const audioBuffer = Buffer.from(message.base64Data, 'base64');
-        const file = new File([audioBuffer], 'audio', { type: message.mimeType });
-        const { id: mediaId } = await this.whatsappClient.media.upload({
-          phoneNumberId: this.metaPhoneNumberId,
-          type: message.mimeType,
-          file,
+        const mediaId = await this.uploadMedia({
+          base64Data: message.base64Data,
+          mimeType: message.mimeType,
         });
         await this.whatsappClient.messages.sendAudio({
           phoneNumberId: this.metaPhoneNumberId,
           to,
           audio: { id: mediaId },
+        });
+        break;
+      }
+      case 'image': {
+        const mediaId = await this.uploadMedia({
+          base64Data: message.base64Data,
+          mimeType: message.mimeType,
+        });
+        await this.whatsappClient.messages.sendImage({
+          phoneNumberId: this.metaPhoneNumberId,
+          to,
+          image: { id: mediaId, caption: message.caption },
         });
         break;
       }

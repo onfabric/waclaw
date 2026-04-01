@@ -15,7 +15,7 @@ import {
   listAccountIds,
   resolveAccount,
 } from '#config.ts';
-import { readAudioFile } from '#media.ts';
+import { readMediaFile, resolveMediaSendType, sanitizeMediaUrl } from '#media.ts';
 import { getRuntime } from '#runtime.ts';
 
 const SUPPORTED_ACTIONS: ChannelMessageActionName[] = ['react'];
@@ -202,14 +202,15 @@ export const waclawPlugin = createChatChannelPlugin({
         throw new Error('waclaw: connectorToken is not configured');
       }
 
-      const mediaUrl = ctx.mediaUrl;
-      if (!mediaUrl) {
+      if (!ctx.mediaUrl) {
         throw new Error('waclaw: sendMedia called without mediaUrl');
       }
 
-      const audio = await readAudioFile(mediaUrl);
-      if (!audio) {
-        // Not an audio file — fall back to sending just the text caption
+      const mediaUrl = sanitizeMediaUrl(ctx.mediaUrl);
+      const media = await readMediaFile(mediaUrl);
+
+      if (!media) {
+        // Not a supported media file — fall back to sending just the text caption
         if (ctx.text) {
           const messageId = crypto.randomUUID();
           const res = await runtime.client('/send', {
@@ -230,33 +231,58 @@ export const waclawPlugin = createChatChannelPlugin({
       }
 
       const messageId = crypto.randomUUID();
-
-      const res = await runtime.client('/send', {
-        method: 'POST',
-        body: {
-          type: SendMessageTypeEnum.audio,
-          connector_token: account.connectorToken,
-          base64_data: audio.base64Data,
-          mime_type: audio.mimeType,
-          message_id: messageId,
-        },
-      });
-
-      if (res.error) {
-        throw new Error(`waclaw sendMedia failed: ${formatEdenError(res.error)}`);
+      const sendType = resolveMediaSendType(media.mimeType);
+      if (!sendType) {
+        throw new Error(`waclaw: unsupported media mime type ${media.mimeType}`);
       }
 
-      if (ctx.text) {
-        const textRes = await runtime.client('/send', {
-          method: 'POST',
-          body: {
-            type: SendMessageTypeEnum.text,
-            connector_token: account.connectorToken,
-            text: ctx.text,
-          },
-        });
-        if (textRes.error) {
-          throw new Error(`waclaw send caption failed: ${formatEdenError(textRes.error)}`);
+      switch (sendType) {
+        case SendMessageTypeEnum.image: {
+          const res = await runtime.client('/send', {
+            method: 'POST',
+            body: {
+              type: SendMessageTypeEnum.image,
+              connector_token: account.connectorToken,
+              base64_data: media.base64Data,
+              mime_type: media.mimeType,
+              caption: ctx.text,
+              message_id: messageId,
+            },
+          });
+          if (res.error) {
+            throw new Error(`waclaw sendMedia failed: ${formatEdenError(res.error)}`);
+          }
+          break;
+        }
+        case SendMessageTypeEnum.audio: {
+          const res = await runtime.client('/send', {
+            method: 'POST',
+            body: {
+              type: SendMessageTypeEnum.audio,
+              connector_token: account.connectorToken,
+              base64_data: media.base64Data,
+              mime_type: media.mimeType,
+              message_id: messageId,
+            },
+          });
+          if (res.error) {
+            throw new Error(`waclaw sendMedia failed: ${formatEdenError(res.error)}`);
+          }
+          // Audio doesn't support captions — send text separately
+          if (ctx.text) {
+            const textRes = await runtime.client('/send', {
+              method: 'POST',
+              body: {
+                type: SendMessageTypeEnum.text,
+                connector_token: account.connectorToken,
+                text: ctx.text,
+              },
+            });
+            if (textRes.error) {
+              throw new Error(`waclaw send text failed: ${formatEdenError(textRes.error)}`);
+            }
+          }
+          break;
         }
       }
 
