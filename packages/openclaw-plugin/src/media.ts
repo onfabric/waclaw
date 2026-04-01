@@ -11,6 +11,12 @@ const MIME_TO_EXT: Record<string, string> = {
   'image/png': '.png',
   'image/webp': '.webp',
   'image/gif': '.gif',
+  'audio/aac': '.aac',
+  'audio/mp4': '.m4a',
+  'audio/mpeg': '.mp3',
+  'audio/amr': '.amr',
+  'audio/ogg': '.ogg',
+  'audio/opus': '.opus',
 };
 
 export async function writeMediaToTempFile(params: {

@@ -53,6 +53,25 @@ export class WebhookService extends Service {
         } catch (err) {
           logger.error(`Failed to download image media_id=${msg.image.id}: ${err}`);
         }
+      } else if (msg.type === 'audio' && msg.audio?.id) {
+        try {
+          const webhookMimeType = msg.audio.mime_type as string | undefined;
+          const download = await this.whatsappService.downloadMedia({
+            mediaId: msg.audio.id,
+            mimeType: webhookMimeType,
+          });
+          await this.messageService.handleIncoming({
+            waMessageId: msg.id,
+            senderPhone,
+            body: '',
+            media: {
+              mimeType: download.mimeType,
+              data: download.data,
+            },
+          });
+        } catch (err) {
+          logger.error(`Failed to download audio media_id=${msg.audio.id}: ${err}`);
+        }
       }
     }
   }
