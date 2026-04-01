@@ -23,7 +23,7 @@ const routeService = new RouteService(routeRepo);
 const pollService = new PollService(messageRepo);
 const whatsappService = new WhatsAppService(whatsappClient, env.metaPhoneNumberId);
 const messageService = new MessageService(routeService, messageRepo, pollService);
-const webhookService = new WebhookService(messageService);
+const webhookService = new WebhookService(messageService, whatsappService);
 const healthService = new HealthService(healthRepo);
 
 // Plugins

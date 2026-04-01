@@ -1,3 +1,6 @@
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { dispatchInboundDirectDmWithRuntime } from 'openclaw/plugin-sdk/channel-inbound';
 import type {
   OpenClawConfig,
@@ -19,6 +22,24 @@ const POLL_ERROR_RETRY_INTERVAL_MS = 5000;
 const POLL_CLIENT_TIMEOUT_MS = 35_000;
 
 const CONFIGURE_PLUGIN_HINT = 'run `openclaw configure` to set it up, then restart the gateway';
+
+const MIME_TO_EXT: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+};
+
+function extForMime(mimeType: string): string {
+  return MIME_TO_EXT[mimeType] ?? '.bin';
+}
+
+async function writeMediaToTempFile(base64Data: string, mimeType: string): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), 'waclaw-media-'));
+  const filePath = join(dir, `media${extForMime(mimeType)}`);
+  await writeFile(filePath, Buffer.from(base64Data, 'base64'));
+  return filePath;
+}
 
 function isPollTimeoutError(error: { status: number; value?: unknown }): boolean {
   // 408: server explicitly signalled no messages during the park window.
@@ -141,9 +162,27 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         ctx.logger.warn(`waclaw: received message with missing sender_phone, skipping`);
         continue;
       }
+      const hasMedia = 'media' in data && data.media !== null;
       ctx.logger.info(
-        `waclaw: received message from ${data.sender_phone} (message length: ${data.body.length})`,
+        `waclaw: received message from ${data.sender_phone} (body length: ${data.body.length}${hasMedia ? `, media: ${data.media!.mime_type}` : ''})`,
       );
+
+      let extraContext: Record<string, unknown> | undefined;
+      if (hasMedia) {
+        try {
+          const mediaPath = await writeMediaToTempFile(
+            data.media!.base64Data,
+            data.media!.mime_type,
+          );
+          extraContext = {
+            MediaPath: mediaPath,
+            MediaType: data.media!.mime_type,
+          };
+          ctx.logger.info(`waclaw: wrote media to ${mediaPath}`);
+        } catch (err) {
+          ctx.logger.error(`waclaw: failed to write media to temp file: ${err}`);
+        }
+      }
 
       maybeSendAckReaction({
         runtime,
@@ -164,8 +203,9 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         senderAddress: data.sender_phone,
         recipientAddress: accountId,
         conversationLabel: data.sender_phone,
-        rawBody: data.body,
+        rawBody: data.body || (hasMedia ? '[image]' : ''),
         messageId: data.wa_message_id,
+        ...(extraContext && { extraContext }),
         deliver: async (payload) => {
           if (!payload.text) {
             ctx.logger.warn(
