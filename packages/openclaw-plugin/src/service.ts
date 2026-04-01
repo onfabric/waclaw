@@ -30,15 +30,25 @@ const POLL_CLIENT_TIMEOUT_MS = 35_000;
 
 const CONFIGURE_PLUGIN_HINT = 'run `openclaw configure` to set it up, then restart the gateway';
 
-function isPollTimeoutError(error: { status: number; value?: unknown }): boolean {
+type PollTimeoutKind = 'park' | 'abort' | null;
+
+function getPollTimeoutKind(error: { status: number; value?: unknown }): PollTimeoutKind {
   // 408: server explicitly signalled no messages during the park window.
-  // 503: edenFetch wraps all network-level exceptions (ECONNRESET, AbortError,
-  //      TimeoutError, …) as status 503. On a long-poll endpoint any dropped
-  //      connection is expected and should just trigger an immediate retry.
-  return (
-    error.status === HTTP_STATUS_REQUEST_TIMEOUT_408 ||
-    error.status === HTTP_STATUS_SERVICE_UNAVAILABLE_503
-  );
+  if (error.status === HTTP_STATUS_REQUEST_TIMEOUT_408) {
+    return 'park';
+  }
+  // 503 + TimeoutError: the client's AbortSignal.timeout fired after
+  // POLL_CLIENT_TIMEOUT_MS without a server response. edenFetch wraps
+  // this as a 503 with a DOMException(name="TimeoutError") in `value`.
+  // This is expected during normal long-polling and should retry immediately.
+  if (
+    error.status === HTTP_STATUS_SERVICE_UNAVAILABLE_503 &&
+    error.value instanceof DOMException &&
+    error.value.name === 'TimeoutError'
+  ) {
+    return 'abort';
+  }
+  return null;
 }
 
 type AckReactionResult = {
@@ -142,8 +152,13 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         signal: AbortSignal.timeout(POLL_CLIENT_TIMEOUT_MS),
       });
       if (error) {
-        if (isPollTimeoutError(error)) {
+        const timeoutKind = getPollTimeoutKind(error);
+        if (timeoutKind === 'park') {
           ctx.logger.info('waclaw: poll timed out, continuing');
+          continue;
+        }
+        if (timeoutKind === 'abort') {
+          ctx.logger.warn('waclaw: poll client timed out, continuing');
           continue;
         }
         throw new Error(`waclaw poll failed: ${formatEdenError(error)}`);
