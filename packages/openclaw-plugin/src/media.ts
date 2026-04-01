@@ -4,7 +4,10 @@ import { extname, join } from 'node:path';
 import { SendMessageTypeEnum } from '#client.ts';
 
 const OPENCLAW_TMP_DIR = '/tmp/openclaw';
-
+/**
+ * OpenClaw may use this prefix for media paths.
+ */
+const MEDIA_URL_PREFIX = 'MEDIA:';
 const UNKNOWN_EXT = '.bin';
 
 const MIME_TO_EXT: Record<string, string> = {
@@ -46,6 +49,13 @@ export function resolveMediaSendType(mimeType: string): SendMediaType | undefine
     return SendMessageTypeEnum.image;
   }
   return undefined;
+}
+
+export function sanitizeMediaUrl(mediaUrl: string): string {
+  if (mediaUrl.startsWith(MEDIA_URL_PREFIX)) {
+    return mediaUrl.slice(MEDIA_URL_PREFIX.length);
+  }
+  return mediaUrl;
 }
 
 export type MediaPayload = {

@@ -37,6 +37,7 @@ export const sendController = new Elysia()
             to: route.sender_phone,
             base64Data: body.base64_data,
             mimeType: body.mime_type,
+            caption: body.caption,
           };
           break;
         default:

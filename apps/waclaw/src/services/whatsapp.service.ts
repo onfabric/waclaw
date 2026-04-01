@@ -33,6 +33,7 @@ type SendImageMessage = {
   to: string;
   base64Data: string;
   mimeType: string;
+  caption?: string;
 };
 
 export type SendMessageOptions =
@@ -130,7 +131,7 @@ export class WhatsAppService extends Service {
         await this.whatsappClient.messages.sendImage({
           phoneNumberId: this.metaPhoneNumberId,
           to,
-          image: { id: mediaId },
+          image: { id: mediaId, caption: message.caption },
         });
         break;
       }

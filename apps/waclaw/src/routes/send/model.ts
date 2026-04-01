@@ -32,6 +32,7 @@ const SendImageBodySchema = t.Object({
   base64_data: t.String({ minLength: 1 }),
   /** MIME type of the image (e.g. image/jpeg, image/png) */
   mime_type: t.String({ minLength: 1 }),
+  caption: t.Optional(t.String()),
   message_id: t.Optional(t.String({ minLength: 1 })),
 });
 
