@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 
 const OPENCLAW_TMP_DIR = '/tmp/openclaw';
@@ -33,6 +33,22 @@ const EXT_TO_AUDIO_MIME: Record<string, string> = {
 export function resolveAudioMimeType(filePath: string): string | undefined {
   const ext = extname(filePath).toLowerCase();
   return EXT_TO_AUDIO_MIME[ext];
+}
+
+export type AudioPayload = {
+  base64Data: string;
+  mimeType: string;
+};
+
+/**
+ * Reads a local audio file and returns its base64-encoded data and MIME type.
+ * Returns undefined if the file is not a recognized audio format.
+ */
+export async function readAudioFile(filePath: string): Promise<AudioPayload | undefined> {
+  const mimeType = resolveAudioMimeType(filePath);
+  if (!mimeType) return undefined;
+  const fileBuffer = await readFile(filePath);
+  return { base64Data: fileBuffer.toString('base64'), mimeType };
 }
 
 export async function writeMediaToTempFile(params: {

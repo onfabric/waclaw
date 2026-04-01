@@ -6,7 +6,7 @@ import type {
 } from 'openclaw/plugin-sdk/core';
 import { formatEdenError, SendMessageTypeEnum } from '#client.ts';
 import { CHANNEL_ID, CHANNEL_NAME, resolveAccount } from '#config.ts';
-import { writeMediaToTempFile } from '#media.ts';
+import { readAudioFile, writeMediaToTempFile } from '#media.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
 const EMOJI_REACTION = '👀';
@@ -191,14 +191,15 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         messageId: data.wa_message_id,
         ...(extraContext && { extraContext }),
         deliver: async (payload) => {
-          if (!payload.text) {
+          const mediaUrl = payload.mediaUrl ?? payload.mediaUrls?.[0];
+          if (!payload.text && !mediaUrl) {
             ctx.logger.warn(
-              `waclaw: deliver called for ${data.sender_phone} with no text, skipping`,
+              `waclaw: deliver called for ${data.sender_phone} with no text and no media, skipping`,
             );
             return;
           }
 
-          // Remove ack reaction before sending the text reply — unless the agent
+          // Remove ack reaction before sending the reply — unless the agent
           // already reacted (its emoji replaced the ack on WhatsApp).
           const hasAgentReacted = runtime.agentReactedMessageIds.delete(data.wa_message_id);
           if (!hasAgentReacted) {
@@ -207,21 +208,49 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
             );
           }
 
-          const { error } = await runtime.client('/send', {
-            method: 'POST',
-            body: {
-              type: SendMessageTypeEnum.text,
-              connector_token: connectorToken,
-              text: payload.text,
-              message_id: payload.replyToId || data.wa_message_id,
-            },
-          });
-          if (error) {
-            throw new Error(`waclaw deliver failed: ${formatEdenError(error)}`);
+          // Send audio if the payload contains an audio media URL
+          if (mediaUrl) {
+            const audio = await readAudioFile(mediaUrl);
+            if (audio) {
+              const { error } = await runtime.client('/send', {
+                method: 'POST',
+                body: {
+                  type: SendMessageTypeEnum.audio,
+                  connector_token: connectorToken,
+                  base64_data: audio.base64Data,
+                  mime_type: audio.mimeType,
+                  message_id: payload.replyToId || data.wa_message_id,
+                },
+              });
+              if (error) {
+                throw new Error(`waclaw deliver audio failed: ${formatEdenError(error)}`);
+              }
+              ctx.logger.info(
+                `waclaw: delivered audio to ${data.sender_phone} (mime: ${audio.mimeType})`,
+              );
+            } else {
+              ctx.logger.warn(`waclaw: unsupported media type for ${mediaUrl}, skipping media`);
+            }
           }
-          ctx.logger.info(
-            `waclaw: delivered to ${data.sender_phone} (length: ${payload.text.length})`,
-          );
+
+          // Send text if present (as a separate message when audio was also sent)
+          if (payload.text) {
+            const { error } = await runtime.client('/send', {
+              method: 'POST',
+              body: {
+                type: SendMessageTypeEnum.text,
+                connector_token: connectorToken,
+                text: payload.text,
+                message_id: payload.replyToId || data.wa_message_id,
+              },
+            });
+            if (error) {
+              throw new Error(`waclaw deliver failed: ${formatEdenError(error)}`);
+            }
+            ctx.logger.info(
+              `waclaw: delivered text to ${data.sender_phone} (length: ${payload.text.length})`,
+            );
+          }
         },
         onRecordError: (err) => ctx.logger.error(`waclaw: session record error: ${err}`),
         onDispatchError: (err, info) =>

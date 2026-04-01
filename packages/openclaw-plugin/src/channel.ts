@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import type { ChannelMessageActionName } from 'openclaw/plugin-sdk';
 import type { ChannelSetupWizard } from 'openclaw/plugin-sdk/channel-setup';
 import {
@@ -16,7 +15,7 @@ import {
   listAccountIds,
   resolveAccount,
 } from '#config.ts';
-import { resolveAudioMimeType } from '#media.ts';
+import { readAudioFile } from '#media.ts';
 import { getRuntime } from '#runtime.ts';
 
 const SUPPORTED_ACTIONS: ChannelMessageActionName[] = ['react'];
@@ -208,8 +207,8 @@ export const waclawPlugin = createChatChannelPlugin({
         throw new Error('waclaw: sendMedia called without mediaUrl');
       }
 
-      const mimeType = resolveAudioMimeType(mediaUrl);
-      if (!mimeType) {
+      const audio = await readAudioFile(mediaUrl);
+      if (!audio) {
         // Not an audio file — fall back to sending just the text caption
         if (ctx.text) {
           const messageId = crypto.randomUUID();
@@ -230,8 +229,6 @@ export const waclawPlugin = createChatChannelPlugin({
         throw new Error(`waclaw: unsupported media type for ${mediaUrl}`);
       }
 
-      const fileBuffer = await readFile(mediaUrl);
-      const base64Data = fileBuffer.toString('base64');
       const messageId = crypto.randomUUID();
 
       const res = await runtime.client('/send', {
@@ -239,8 +236,8 @@ export const waclawPlugin = createChatChannelPlugin({
         body: {
           type: SendMessageTypeEnum.audio,
           connector_token: account.connectorToken,
-          base64_data: base64Data,
-          mime_type: mimeType,
+          base64_data: audio.base64Data,
+          mime_type: audio.mimeType,
           message_id: messageId,
         },
       });
