@@ -221,7 +221,6 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
             );
           }
 
-          // Send audio if the payload contains an audio media URL
           if (mediaUrl) {
             const audio = await readAudioFile(mediaUrl);
             if (audio) {
@@ -246,7 +245,6 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
             }
           }
 
-          // Send text if present (as a separate message when audio was also sent)
           if (payload.text) {
             const { error } = await runtime.client('/send', {
               method: 'POST',
