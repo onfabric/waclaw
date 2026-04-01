@@ -9,7 +9,11 @@ import { CHANNEL_ID, CHANNEL_NAME, resolveAccount } from '#config.ts';
 import { readAudioFile, writeMediaToTempFile } from '#media.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
-const EMOJI_REACTION = '👀';
+enum AckEmoji {
+  Default = '👀',
+  Audio = '🎧',
+  Image = '👓',
+}
 
 const HTTP_STATUS_REQUEST_TIMEOUT_408 = 408;
 const HTTP_STATUS_SERVICE_UNAVAILABLE_503 = 503;
@@ -41,10 +45,11 @@ function maybeSendAckReaction(params: {
   cfg: OpenClawConfig;
   connectorToken: string;
   waMessageId: string;
+  emoji: AckEmoji;
   logger: OpenClawPluginServiceContext['logger'];
 }): AckReactionResult {
   params.logger.info(
-    `waclaw: sending ack reaction ${EMOJI_REACTION} for message ${params.waMessageId}`,
+    `waclaw: sending ack reaction ${params.emoji} for message ${params.waMessageId}`,
   );
 
   const sendPromise = params.runtime
@@ -54,7 +59,7 @@ function maybeSendAckReaction(params: {
         type: SendMessageTypeEnum.reaction,
         connector_token: params.connectorToken,
         wa_message_id: params.waMessageId,
-        emoji: EMOJI_REACTION,
+        emoji: params.emoji,
       },
     })
     .then(({ error }) => {
@@ -168,11 +173,19 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         }
       }
 
+      const mediaMime = data.media?.mime_type;
+      const ackEmoji = mediaMime?.startsWith('audio/')
+        ? AckEmoji.Audio
+        : mediaMime?.startsWith('image/')
+          ? AckEmoji.Image
+          : AckEmoji.Default;
+
       maybeSendAckReaction({
         runtime,
         cfg: ctx.config,
         connectorToken,
         waMessageId: data.wa_message_id,
+        emoji: ackEmoji,
         logger: ctx.logger,
       });
 
