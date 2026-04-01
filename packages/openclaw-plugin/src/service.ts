@@ -226,7 +226,9 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
             if (media) {
               const sendType = resolveMediaSendType(media.mimeType);
               if (!sendType) {
-                ctx.logger.warn(`waclaw: unsupported media mime type ${media.mimeType}, skipping media`);
+                ctx.logger.warn(
+                  `waclaw: unsupported media mime type ${media.mimeType}, skipping media`,
+                );
                 return;
               }
               const { error } = await runtime.client('/send', {

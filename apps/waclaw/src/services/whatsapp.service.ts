@@ -35,7 +35,11 @@ type SendImageMessage = {
   mimeType: string;
 };
 
-export type SendMessageOptions = SendTextMessage | SendReactionMessage | SendAudioMessage | SendImageMessage;
+export type SendMessageOptions =
+  | SendTextMessage
+  | SendReactionMessage
+  | SendAudioMessage
+  | SendImageMessage;
 
 export type MediaDownload = {
   data: Buffer;
@@ -106,28 +110,30 @@ export class WhatsAppService extends Service {
           reaction: { messageId: message.messageId, emoji: message.emoji },
         });
         break;
-      case 'audio':
-        const audioMediaId = await this.uploadMedia({
+      case 'audio': {
+        const mediaId = await this.uploadMedia({
           base64Data: message.base64Data,
           mimeType: message.mimeType,
         });
         await this.whatsappClient.messages.sendAudio({
           phoneNumberId: this.metaPhoneNumberId,
           to,
-          audio: { id: audioMediaId },
+          audio: { id: mediaId },
         });
         break;
-      case 'image':
-        const imageMediaId = await this.uploadMedia({
+      }
+      case 'image': {
+        const mediaId = await this.uploadMedia({
           base64Data: message.base64Data,
           mimeType: message.mimeType,
         });
         await this.whatsappClient.messages.sendImage({
           phoneNumberId: this.metaPhoneNumberId,
           to,
-          image: { id: imageMediaId },
+          image: { id: mediaId },
         });
         break;
+      }
     }
   }
 }
