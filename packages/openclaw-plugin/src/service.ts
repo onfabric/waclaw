@@ -14,6 +14,8 @@ import {
 } from '#media.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
+const SECONDS_TO_MILLISECONDS = 1000;
+
 enum AckEmoji {
   Default = '👀',
   Audio = '🎧',
@@ -23,10 +25,11 @@ enum AckEmoji {
 const HTTP_STATUS_REQUEST_TIMEOUT_408 = 408;
 const HTTP_STATUS_SERVICE_UNAVAILABLE_503 = 503;
 
-const POLL_ERROR_RETRY_INTERVAL_MS = 5000;
+const POLL_ERROR_RETRY_INTERVAL_SECONDS = 5;
+const POLL_ERROR_RETRY_INTERVAL_MS = POLL_ERROR_RETRY_INTERVAL_SECONDS * SECONDS_TO_MILLISECONDS;
 // Must be longer than the server-side park timeout (30 s) so the server always
 // gets the chance to respond with 408 before the client aborts.
-const POLL_CLIENT_TIMEOUT_MS = 35_000;
+const POLL_CLIENT_TIMEOUT_MS = 35 * SECONDS_TO_MILLISECONDS;
 
 const CONFIGURE_PLUGIN_HINT = 'run `openclaw configure` to set it up, then restart the gateway';
 
@@ -161,7 +164,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
           ctx.logger.warn('waclaw: poll client timed out, continuing');
           continue;
         }
-        throw new Error(`waclaw poll failed: ${formatEdenError(error)}`);
+        throw new Error(`Poll failed: ${formatEdenError(error)}`);
       }
       if (!data.sender_phone) {
         ctx.logger.warn(`waclaw: received message with missing sender_phone, skipping`);
@@ -268,7 +271,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
                     },
                   });
                   if (error) {
-                    throw new Error(`waclaw deliver image failed: ${formatEdenError(error)}`);
+                    throw new Error(`Deliver image failed: ${formatEdenError(error)}`);
                   }
                   captionSent = Boolean(payload.text);
                   break;
@@ -285,7 +288,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
                     },
                   });
                   if (error) {
-                    throw new Error(`waclaw deliver audio failed: ${formatEdenError(error)}`);
+                    throw new Error(`Deliver audio failed: ${formatEdenError(error)}`);
                   }
                   break;
                 }
@@ -309,7 +312,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
               },
             });
             if (error) {
-              throw new Error(`waclaw deliver failed: ${formatEdenError(error)}`);
+              throw new Error(`Deliver failed: ${formatEdenError(error)}`);
             }
             ctx.logger.info(
               `waclaw: delivered text to ${data.sender_phone} (length: ${payload.text.length})`,
@@ -321,7 +324,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
           ctx.logger.error(`waclaw: dispatch error [${info.kind}]: ${err}`),
       });
     } catch (err) {
-      ctx.logger.error(`waclaw: poll error: ${err}`);
+      ctx.logger.error(`waclaw: poll error: ${err}. Retrying in ${POLL_ERROR_RETRY_INTERVAL_SECONDS}s...`);
       await new Promise((resolve) => setTimeout(resolve, POLL_ERROR_RETRY_INTERVAL_MS));
     }
   }
