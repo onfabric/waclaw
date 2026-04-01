@@ -1,6 +1,3 @@
-import { mkdtemp, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { dispatchInboundDirectDmWithRuntime } from 'openclaw/plugin-sdk/channel-inbound';
 import type {
   OpenClawConfig,
@@ -23,22 +20,8 @@ const POLL_CLIENT_TIMEOUT_MS = 35_000;
 
 const CONFIGURE_PLUGIN_HINT = 'run `openclaw configure` to set it up, then restart the gateway';
 
-const MIME_TO_EXT: Record<string, string> = {
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-  'image/webp': '.webp',
-  'image/gif': '.gif',
-};
-
-function extForMime(mimeType: string): string {
-  return MIME_TO_EXT[mimeType] ?? '.bin';
-}
-
-async function writeMediaToTempFile(base64Data: string, mimeType: string): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), 'waclaw-media-'));
-  const filePath = join(dir, `media${extForMime(mimeType)}`);
-  await writeFile(filePath, Buffer.from(base64Data, 'base64'));
-  return filePath;
+function toDataUrl(base64Data: string, mimeType: string): string {
+  return `data:${mimeType};base64,${base64Data}`;
 }
 
 function isPollTimeoutError(error: { status: number; value?: unknown }): boolean {
@@ -169,19 +152,11 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
 
       let extraContext: Record<string, unknown> | undefined;
       if (hasMedia) {
-        try {
-          const mediaPath = await writeMediaToTempFile(
-            data.media!.base64Data,
-            data.media!.mime_type,
-          );
-          extraContext = {
-            MediaPath: mediaPath,
-            MediaType: data.media!.mime_type,
-          };
-          ctx.logger.info(`waclaw: wrote media to ${mediaPath}`);
-        } catch (err) {
-          ctx.logger.error(`waclaw: failed to write media to temp file: ${err}`);
-        }
+        extraContext = {
+          MediaUrl: toDataUrl(data.media!.base64Data, data.media!.mime_type),
+          MediaType: data.media!.mime_type,
+        };
+        ctx.logger.info(`waclaw: attached media as data URL (${data.media!.mime_type})`);
       }
 
       maybeSendAckReaction({

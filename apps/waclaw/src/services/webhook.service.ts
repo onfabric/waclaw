@@ -36,8 +36,10 @@ export class WebhookService extends Service {
         });
       } else if (msg.type === 'image' && msg.image?.id) {
         try {
+          const webhookMimeType = msg.image.mime_type as string | undefined;
           const download = await this.whatsappService.downloadMedia({
             mediaId: msg.image.id,
+            mimeType: webhookMimeType,
           });
           await this.messageService.handleIncoming({
             waMessageId: msg.id,
