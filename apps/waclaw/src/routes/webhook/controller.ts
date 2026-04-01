@@ -1,8 +1,7 @@
+import { normalizeWebhook, verifySignature } from '@kapso/whatsapp-cloud-api/server';
 import { Elysia, StatusMap } from 'elysia';
 import { env } from '#lib/env.ts';
 import { BadRequestError, UnauthorizedError } from '#lib/errors.ts';
-import { verifyMetaSignature } from '#lib/signature.ts';
-import type { MetaWebhookPayload } from '#routes/webhook/model.ts';
 import {
   WebhookResponseSchema,
   WebhookVerifyQuerySchema,
@@ -40,19 +39,26 @@ export const webhookController = new Elysia()
       const rawBody = await request.text();
       const signature = request.headers.get('x-hub-signature-256');
 
-      if (!verifyMetaSignature(rawBody, signature, env.metaAppSecret)) {
+      if (
+        !verifySignature({
+          appSecret: env.metaAppSecret,
+          rawBody,
+          signatureHeader: signature ?? undefined,
+        })
+      ) {
         logger.error('Webhook signature verification failed');
         throw new UnauthorizedError('Invalid webhook signature');
       }
 
-      let payload: MetaWebhookPayload;
+      let payload: Record<string, unknown>;
       try {
         payload = JSON.parse(rawBody);
       } catch {
         throw new BadRequestError('Invalid JSON body');
       }
 
-      await webhookService.processIncomingPayload(payload);
+      const normalized = normalizeWebhook(payload);
+      await webhookService.processIncomingPayload(normalized);
 
       return status(StatusMap.OK, { status: 'success' });
     },

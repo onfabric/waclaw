@@ -6,6 +6,7 @@ import type {
 } from 'openclaw/plugin-sdk/core';
 import { formatEdenError, SendMessageTypeEnum } from '#client.ts';
 import { CHANNEL_ID, CHANNEL_NAME, resolveAccount } from '#config.ts';
+import { writeMediaToTempFile } from '#media.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
 const EMOJI_REACTION = '👀';
@@ -141,9 +142,31 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         ctx.logger.warn(`waclaw: received message with missing sender_phone, skipping`);
         continue;
       }
+
+      let messageContent = data.body;
+
       ctx.logger.info(
-        `waclaw: received message from ${data.sender_phone} (message length: ${data.body.length})`,
+        `waclaw: received message from ${data.sender_phone} (body length: ${data.body.length})`,
       );
+
+      let extraContext: Record<string, unknown> | undefined;
+      if (data.media) {
+        ctx.logger.info(`waclaw: message has media (mime type: ${data.media.mime_type})`);
+        try {
+          const mediaPath = await writeMediaToTempFile({
+            base64Data: data.media.base64Data,
+            mimeType: data.media.mime_type,
+          });
+          messageContent = messageContent || '[media]';
+          extraContext = {
+            MediaPath: mediaPath,
+            MediaType: data.media!.mime_type,
+          };
+          ctx.logger.info(`waclaw: wrote media to ${mediaPath}`);
+        } catch (err) {
+          ctx.logger.error(`waclaw: failed to write media to temp file: ${err}`);
+        }
+      }
 
       maybeSendAckReaction({
         runtime,
@@ -164,8 +187,9 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         senderAddress: data.sender_phone,
         recipientAddress: accountId,
         conversationLabel: data.sender_phone,
-        rawBody: data.body,
+        rawBody: messageContent,
         messageId: data.wa_message_id,
+        ...(extraContext && { extraContext }),
         deliver: async (payload) => {
           if (!payload.text) {
             ctx.logger.warn(

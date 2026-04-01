@@ -2,6 +2,12 @@ import type { WhatsAppClient } from '@kapso/whatsapp-cloud-api';
 import { toMetaFormat } from '#lib/phone.ts';
 import { Service } from '#services/service.ts';
 
+/**
+ * According to the MIME spec (https://www.rfc-editor.org/rfc/rfc2046#section-4.5.1),
+ * this is the mime type to use for unknown file types.
+ */
+const UNKNOWN_MIME_TYPE = 'application/octet-stream';
+
 type SendTextMessage = {
   type: 'text';
   to: string;
@@ -17,12 +23,37 @@ type SendReactionMessage = {
 
 export type SendMessageOptions = SendTextMessage | SendReactionMessage;
 
+export type MediaDownload = {
+  data: Buffer;
+  mimeType: string;
+};
+
 export class WhatsAppService extends Service {
   constructor(
     private whatsappClient: WhatsAppClient,
     private metaPhoneNumberId: string,
   ) {
     super();
+  }
+
+  async downloadMedia({
+    mediaId,
+    mimeType: hintMimeType,
+  }: {
+    mediaId: string;
+    mimeType?: string;
+  }): Promise<MediaDownload> {
+    const response = (await this.whatsappClient.media.download({
+      mediaId,
+      as: 'response',
+      auth: 'always',
+    })) as Response;
+    if (!response.ok) {
+      throw new Error(`media download failed: ${response.status} ${response.statusText}`);
+    }
+    const data = Buffer.from(await response.arrayBuffer());
+    const mimeType = hintMimeType ?? response.headers.get('content-type') ?? UNKNOWN_MIME_TYPE;
+    return { data, mimeType };
   }
 
   async sendMessage(message: SendMessageOptions): Promise<void> {
