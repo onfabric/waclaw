@@ -23,7 +23,6 @@ enum AckEmoji {
 }
 
 const HTTP_STATUS_REQUEST_TIMEOUT_408 = 408;
-const HTTP_STATUS_SERVICE_UNAVAILABLE_503 = 503;
 
 const POLL_ERROR_RETRY_INTERVAL_SECONDS = 5;
 const POLL_ERROR_RETRY_INTERVAL_MS = POLL_ERROR_RETRY_INTERVAL_SECONDS * SECONDS_TO_MILLISECONDS;
@@ -32,27 +31,6 @@ const POLL_ERROR_RETRY_INTERVAL_MS = POLL_ERROR_RETRY_INTERVAL_SECONDS * SECONDS
 const POLL_CLIENT_TIMEOUT_MS = 35 * SECONDS_TO_MILLISECONDS;
 
 const CONFIGURE_PLUGIN_HINT = 'run `openclaw configure` to set it up, then restart the gateway';
-
-type PollTimeoutKind = 'park' | 'abort' | null;
-
-function getPollTimeoutKind(error: { status: number; value?: unknown }): PollTimeoutKind {
-  // 408: server explicitly signalled no messages during the park window.
-  if (error.status === HTTP_STATUS_REQUEST_TIMEOUT_408) {
-    return 'park';
-  }
-  // 503 + TimeoutError: the client's AbortSignal.timeout fired after
-  // POLL_CLIENT_TIMEOUT_MS without a server response. edenFetch wraps
-  // this as a 503 with a DOMException(name="TimeoutError") in `value`.
-  // This is expected during normal long-polling and should retry immediately.
-  if (
-    error.status === HTTP_STATUS_SERVICE_UNAVAILABLE_503 &&
-    error.value instanceof DOMException &&
-    error.value.name === 'TimeoutError'
-  ) {
-    return 'abort';
-  }
-  return null;
-}
 
 type AckReactionResult = {
   sendPromise: Promise<boolean>;
@@ -155,13 +133,8 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         signal: AbortSignal.timeout(POLL_CLIENT_TIMEOUT_MS),
       });
       if (error) {
-        const timeoutKind = getPollTimeoutKind(error);
-        if (timeoutKind === 'park') {
+        if (error.status === HTTP_STATUS_REQUEST_TIMEOUT_408) {
           ctx.logger.info('waclaw: poll timed out, continuing');
-          continue;
-        }
-        if (timeoutKind === 'abort') {
-          ctx.logger.warn('waclaw: poll client timed out, continuing');
           continue;
         }
         throw new Error(`Poll failed: ${formatEdenError(error)}`);
@@ -324,7 +297,9 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
           ctx.logger.error(`waclaw: dispatch error [${info.kind}]: ${err}`),
       });
     } catch (err) {
-      ctx.logger.error(`waclaw: poll error: ${err}. Retrying in ${POLL_ERROR_RETRY_INTERVAL_SECONDS}s...`);
+      ctx.logger.error(
+        `waclaw: poll error: ${err}. Retrying in ${POLL_ERROR_RETRY_INTERVAL_SECONDS}s...`,
+      );
       await new Promise((resolve) => setTimeout(resolve, POLL_ERROR_RETRY_INTERVAL_MS));
     }
   }
