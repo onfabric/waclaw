@@ -29,18 +29,27 @@ export class WebhookService extends Service {
       const senderPhone = normalizeToE164(msg.from);
 
       if (msg.type === 'text' && msg.text?.body) {
+        logger.info(
+          `Received text from=${senderPhone} wa_message_id=${msg.id} length=${msg.text.body.length}`,
+        );
         await this.messageService.handleIncoming({
           waMessageId: msg.id,
           senderPhone,
           body: msg.text.body,
         });
       } else if (msg.type === 'image' && msg.image?.id) {
+        logger.info(
+          `Received image from=${senderPhone} media_id=${msg.image.id} mime_type=${msg.image.mime_type ?? 'unknown'}`,
+        );
         try {
           const webhookMimeType = msg.image.mime_type as string | undefined;
           const download = await this.whatsappService.downloadMedia({
             mediaId: msg.image.id,
             mimeType: webhookMimeType,
           });
+          logger.info(
+            `Downloaded image media_id=${msg.image.id} size=${download.data.length} mime_type=${download.mimeType}`,
+          );
           await this.messageService.handleIncoming({
             waMessageId: msg.id,
             senderPhone,
@@ -54,12 +63,18 @@ export class WebhookService extends Service {
           logger.error(`Failed to download image media_id=${msg.image.id}: ${err}`);
         }
       } else if (msg.type === 'audio' && msg.audio?.id) {
+        logger.info(
+          `Received audio from=${senderPhone} media_id=${msg.audio.id} mime_type=${msg.audio.mime_type ?? 'unknown'}`,
+        );
         try {
           const webhookMimeType = msg.audio.mime_type as string | undefined;
           const download = await this.whatsappService.downloadMedia({
             mediaId: msg.audio.id,
             mimeType: webhookMimeType,
           });
+          logger.info(
+            `Downloaded audio media_id=${msg.audio.id} size=${download.data.length} mime_type=${download.mimeType}`,
+          );
           await this.messageService.handleIncoming({
             waMessageId: msg.id,
             senderPhone,
@@ -72,6 +87,10 @@ export class WebhookService extends Service {
         } catch (err) {
           logger.error(`Failed to download audio media_id=${msg.audio.id}: ${err}`);
         }
+      } else {
+        logger.warn(
+          `Unhandled message type=${msg.type} from=${senderPhone} wa_message_id=${msg.id}`,
+        );
       }
     }
   }
