@@ -39,3 +39,73 @@ After configuring, restart the gateway:
 ```bash
 openclaw gateway restart
 ```
+
+## Additional Configuration
+
+You can configure OpenClaw with additional functionalities.
+
+## React to messages proactively
+
+Edit your `openclaw.json` file with:
+
+```json
+{
+  "tools": {
+    "profile": "full"
+  }
+}
+```
+
+> If you find `"profile": "coding"` in the `tools` configuration, replace it with the content above.
+
+## Support user-sent audio messages
+
+Edit your `openclaw.json` file with:
+
+```json
+{
+  "tools": {
+    "media": {
+      "audio": {
+        "enabled": true,
+        "models": [
+          {
+            "provider": "openai",
+            "model": "gpt-4o-mini-transcribe"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+### Support sending audio messages
+
+Edit your `openclaw.json` file with:
+
+```json
+{
+  "messages": {
+    "tts": {
+      "auto": "tagged",
+      "provider": "elevenlabs",
+      "providers": {
+        "elevenlabs": {
+          "enabled": true,
+          "apiKey": "<your-api-key>",
+          "baseUrl": "https://api.elevenlabs.io",
+          "voiceId": "<your-voice-id>",
+          "modelId": "eleven_multilingual_v2",
+          "languageCode": "en"
+        }
+      }
+    }
+  },
+  "plugins": {
+    "entries": {
+      "elevenlabs": { "enabled": true }
+    }
+  }
+}
+```
