@@ -105,7 +105,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
           ? AckEmoji.Image
           : AckEmoji.Default;
 
-      maybeSendAckReaction({
+      const { sendPromise: ackSent } = maybeSendAckReaction({
         runtime,
         cfg: ctx.config,
         connectorToken,
@@ -119,6 +119,7 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         connectorToken,
         waMessageId: data.wa_message_id,
         logger: ctx.logger,
+        startTimerAfterPromise: ackSent,
       });
 
       await dispatchInboundDirectDmWithRuntime({

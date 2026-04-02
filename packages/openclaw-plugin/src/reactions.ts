@@ -74,9 +74,15 @@ export function startThinkingReactions(params: {
   connectorToken: string;
   waMessageId: string;
   logger: OpenClawPluginServiceContext['logger'];
+  startTimerAfterPromise?: Promise<unknown>;
 }): { stopThinkingReactions: () => void } {
-  const timer = setInterval(() => {
-    const emoji = pickRandomThinkingEmoji();
+  let timer: ReturnType<typeof setInterval> | undefined;
+  let stopped = false;
+  let tick = 0;
+
+  function sendThinkingReaction() {
+    const emoji = pickRandomThinkingEmoji(tick++);
+
     params.logger.info(
       `waclaw: sending thinking reaction ${emoji} for message ${params.waMessageId}`,
     );
@@ -100,7 +106,27 @@ export function startThinkingReactions(params: {
       .catch((err) => {
         params.logger.error(`waclaw: thinking reaction failed. Error from client: ${err}`);
       });
-  }, THINKING_REACTION_INTERVAL_MS);
+  }
 
-  return { stopThinkingReactions: () => clearInterval(timer) };
+  function startInterval() {
+    if (stopped) {
+      return;
+    }
+    timer = setInterval(sendThinkingReaction, THINKING_REACTION_INTERVAL_MS);
+  }
+
+  if (params.startTimerAfterPromise) {
+    params.startTimerAfterPromise.then(startInterval, startInterval);
+  } else {
+    startInterval();
+  }
+
+  return {
+    stopThinkingReactions: () => {
+      stopped = true;
+      if (timer) {
+        clearInterval(timer);
+      }
+    },
+  };
 }
