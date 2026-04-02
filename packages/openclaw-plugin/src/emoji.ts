@@ -9,6 +9,7 @@ export enum AckEmoji {
  * next emoji on top of all previous ones. Early ticks have a small pool; the
  * longer it takes, the bigger (and weirder) the pool gets.
  */
+// biome-ignore format: Keep the rows to see what each tick unlocks
 const THINKING_EMOJIS = [
   '🧠', '🤔', '💭', '⏳', '✍️', '💡', '🔍',
   '⚙️', '🧩', '🔮', '🪄', '🎯', '🧪', '⚡',
