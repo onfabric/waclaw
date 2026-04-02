@@ -1,6 +1,6 @@
 import type { OpenClawConfig, OpenClawPluginServiceContext } from 'openclaw/plugin-sdk/core';
 import { formatEdenError, SendMessageTypeEnum } from '#client.ts';
-import { type AckEmoji, pickRandomThinkingEmoji } from '#emoji.ts';
+import { type AckEmoji, ThinkingEmojiPicker } from '#emoji.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
 const SECONDS_TO_MILLISECONDS = 1000;
@@ -78,10 +78,10 @@ export function startThinkingReactions(params: {
 }): { stopThinkingReactions: () => void } {
   let timer: ReturnType<typeof setInterval> | undefined;
   let stopped = false;
-  let tick = 0;
+  const picker = new ThinkingEmojiPicker();
 
   function sendThinkingReaction() {
-    const emoji = pickRandomThinkingEmoji(tick++);
+    const emoji = picker.pick();
 
     params.logger.info(
       `waclaw: sending thinking reaction ${emoji} for message ${params.waMessageId}`,
