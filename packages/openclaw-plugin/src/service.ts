@@ -1,26 +1,18 @@
 import { dispatchInboundDirectDmWithRuntime } from 'openclaw/plugin-sdk/channel-inbound';
-import type {
-  OpenClawConfig,
-  OpenClawPluginService,
-  OpenClawPluginServiceContext,
-} from 'openclaw/plugin-sdk/core';
+import type { OpenClawPluginService, OpenClawPluginServiceContext } from 'openclaw/plugin-sdk/core';
 import { formatEdenError, SendMessageTypeEnum } from '#client.ts';
 import { CHANNEL_ID, CHANNEL_NAME, resolveAccount } from '#config.ts';
+import { AckEmoji } from '#emoji.ts';
 import {
   readMediaFile,
   resolveMediaSendType,
   sanitizeMediaUrl,
   writeMediaToTempFile,
 } from '#media.ts';
+import { maybeSendAckReaction, sendRemoveReaction, startThinkingReactions } from '#reactions.ts';
 import type { WaclawRuntime } from '#runtime.ts';
 
 const SECONDS_TO_MILLISECONDS = 1000;
-
-enum AckEmoji {
-  Default = '👀',
-  Audio = '🎧',
-  Image = '👓',
-}
 
 const HTTP_STATUS_REQUEST_TIMEOUT_408 = 408;
 
@@ -31,69 +23,6 @@ const POLL_ERROR_RETRY_INTERVAL_MS = POLL_ERROR_RETRY_INTERVAL_SECONDS * SECONDS
 const POLL_CLIENT_TIMEOUT_MS = 35 * SECONDS_TO_MILLISECONDS;
 
 const CONFIGURE_PLUGIN_HINT = 'run `openclaw configure` to set it up, then restart the gateway';
-
-type AckReactionResult = {
-  sendPromise: Promise<boolean>;
-};
-
-function maybeSendAckReaction(params: {
-  runtime: WaclawRuntime;
-  cfg: OpenClawConfig;
-  connectorToken: string;
-  waMessageId: string;
-  emoji: AckEmoji;
-  logger: OpenClawPluginServiceContext['logger'];
-}): AckReactionResult {
-  params.logger.info(
-    `waclaw: sending ack reaction ${params.emoji} for message ${params.waMessageId}`,
-  );
-
-  const sendPromise = params.runtime
-    .client('/send', {
-      method: 'POST',
-      body: {
-        type: SendMessageTypeEnum.reaction,
-        connector_token: params.connectorToken,
-        wa_message_id: params.waMessageId,
-        emoji: params.emoji,
-      },
-    })
-    .then(({ error }) => {
-      if (error) {
-        params.logger.warn(`waclaw: ack reaction failed: ${formatEdenError(error)}`);
-        return false;
-      }
-      return true;
-    })
-    .catch((err) => {
-      params.logger.warn(`waclaw: ack reaction failed: ${err}`);
-      return false;
-    });
-
-  return { sendPromise };
-}
-
-async function sendRemoveReaction(params: {
-  runtime: WaclawRuntime;
-  connectorToken: string;
-  waMessageId: string;
-}): Promise<void> {
-  await params.runtime
-    .client('/send', {
-      method: 'POST',
-      body: {
-        type: SendMessageTypeEnum.reaction,
-        connector_token: params.connectorToken,
-        wa_message_id: params.waMessageId,
-        emoji: '',
-      },
-    })
-    .then(({ error }) => {
-      if (error) {
-        throw new Error(formatEdenError(error));
-      }
-    });
-}
 
 export function createWaclawService(runtime: WaclawRuntime): OpenClawPluginService {
   return {
@@ -176,13 +105,21 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
           ? AckEmoji.Image
           : AckEmoji.Default;
 
-      maybeSendAckReaction({
+      const { sendPromise: ackSent } = maybeSendAckReaction({
         runtime,
         cfg: ctx.config,
         connectorToken,
         waMessageId: data.wa_message_id,
         emoji: ackEmoji,
         logger: ctx.logger,
+      });
+
+      const { stopThinkingReactions } = startThinkingReactions({
+        runtime,
+        connectorToken,
+        waMessageId: data.wa_message_id,
+        logger: ctx.logger,
+        startTimerAfterPromise: ackSent,
       });
 
       await dispatchInboundDirectDmWithRuntime({
@@ -209,8 +146,10 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
             return;
           }
 
-          // Remove ack reaction before sending the reply — unless the agent
-          // already reacted (its emoji replaced the ack on WhatsApp).
+          stopThinkingReactions();
+
+          // Remove ack/thinking reaction before sending the reply — unless the
+          // agent already reacted (its emoji replaced the ack on WhatsApp).
           const hasAgentReacted = runtime.agentReactedMessageIds.delete(data.wa_message_id);
           if (!hasAgentReacted) {
             sendRemoveReaction({ runtime, connectorToken, waMessageId: data.wa_message_id }).catch(
@@ -292,9 +231,14 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
             );
           }
         },
-        onRecordError: (err) => ctx.logger.error(`waclaw: session record error: ${err}`),
-        onDispatchError: (err, info) =>
-          ctx.logger.error(`waclaw: dispatch error [${info.kind}]: ${err}`),
+        onRecordError: (err) => {
+          stopThinkingReactions();
+          ctx.logger.error(`waclaw: session record error: ${err}`);
+        },
+        onDispatchError: (err, info) => {
+          stopThinkingReactions();
+          ctx.logger.error(`waclaw: dispatch error [${info.kind}]: ${err}`);
+        },
       });
     } catch (err) {
       ctx.logger.error(
