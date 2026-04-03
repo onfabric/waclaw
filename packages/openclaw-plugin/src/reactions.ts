@@ -5,6 +5,7 @@ import type { WaclawRuntime } from '#runtime.ts';
 
 const SECONDS_TO_MILLISECONDS = 1000;
 const THINKING_REACTION_INTERVAL_MS = 5 * SECONDS_TO_MILLISECONDS;
+const THINKING_REACTION_MAX_MS = 60 * SECONDS_TO_MILLISECONDS;
 
 type AckReactionResult = {
   sendPromise: Promise<boolean>;
@@ -77,6 +78,7 @@ export function startThinkingReactions(params: {
   startTimerAfterPromise?: Promise<unknown>;
 }): { stopThinkingReactions: () => void } {
   let timer: ReturnType<typeof setInterval> | undefined;
+  let maxTimeout: ReturnType<typeof setTimeout> | undefined;
   let stopped = false;
   const picker = new ThinkingEmojiPicker();
 
@@ -108,11 +110,27 @@ export function startThinkingReactions(params: {
       });
   }
 
+  function stopThinkingReactions() {
+    stopped = true;
+    if (timer) {
+      clearInterval(timer);
+    }
+    if (maxTimeout) {
+      clearTimeout(maxTimeout);
+    }
+  }
+
   function startInterval() {
     if (stopped) {
       return;
     }
     timer = setInterval(sendThinkingReaction, THINKING_REACTION_INTERVAL_MS);
+    maxTimeout = setTimeout(() => {
+      params.logger.info(
+        `waclaw: thinking reactions timed out after ${THINKING_REACTION_MAX_MS}ms for message ${params.waMessageId}`,
+      );
+      stopThinkingReactions();
+    }, THINKING_REACTION_MAX_MS);
   }
 
   if (params.startTimerAfterPromise) {
@@ -122,11 +140,6 @@ export function startThinkingReactions(params: {
   }
 
   return {
-    stopThinkingReactions: () => {
-      stopped = true;
-      if (timer) {
-        clearInterval(timer);
-      }
-    },
+    stopThinkingReactions,
   };
 }
