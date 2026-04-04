@@ -105,6 +105,11 @@ const actions: NonNullable<ChannelPlugin['actions']> = {
     if (emoji) {
       runtime.agentReactedMessageIds.add(messageId);
       console.info(`waclaw: tracked agent reaction for messageId=${messageId}`);
+      const stopThinking = runtime.thinkingReactionStoppers.pop(messageId);
+      if (stopThinking) {
+        stopThinking();
+        console.info(`waclaw: stopped thinking reactions for messageId=${messageId}`);
+      }
     }
 
     const result = emoji ? `Reacted with ${emoji}` : 'Removed reaction';

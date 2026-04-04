@@ -114,13 +114,19 @@ async function pollLoop(runtime: WaclawRuntime, ctx: OpenClawPluginServiceContex
         logger: ctx.logger,
       });
 
-      const { stopThinkingReactions } = startThinkingReactions({
+      const { stopThinkingReactions: stopReactions } = startThinkingReactions({
         runtime,
         connectorToken,
         waMessageId: data.wa_message_id,
         logger: ctx.logger,
         startTimerAfterPromise: ackSent,
       });
+
+      runtime.thinkingReactionStoppers.set(data.wa_message_id, stopReactions);
+      const stopThinkingReactions = () => {
+        runtime.thinkingReactionStoppers.delete(data.wa_message_id);
+        stopReactions();
+      };
 
       await dispatchInboundDirectDmWithRuntime({
         cfg: ctx.config,
