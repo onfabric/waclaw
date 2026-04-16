@@ -1,10 +1,15 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { db } from '#db/client.ts';
 import { logger } from '#lib/logger.ts';
 
-const migrationsDir = join(dirname(fileURLToPath(import.meta.url)), 'migrations');
+// Migrations are placed next to the binary by build.ts. In dev (running from
+// source) the source dir exists on disk, so use it.
+const sourceDir = dirname(fileURLToPath(import.meta.url));
+const migrationsDir = existsSync(sourceDir)
+  ? join(sourceDir, 'migrations')
+  : join(dirname(process.execPath), 'migrations');
 
 export function runMigrations(): void {
   db.run(`

@@ -9,7 +9,7 @@
     "#*": "./src/*"
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target bun",
+    "build": "bun run build.ts",
     "check:types": "bun run --bun tsc"
   },
   "devDependencies": {
