@@ -97,3 +97,36 @@ https://your.domain.com/webhook
 ```
 
 Use the same value you chose for `WEBHOOK_VERIFY_TOKEN` when prompted for the verification token.
+
+## Deploying with Docker
+
+As an alternative to the systemd setup above, you can run waclaw in a container.
+
+### 1. Configure environment variables
+
+Same as step 4 above — copy `apps/waclaw/.env.example` to `apps/waclaw/.env` and fill in the values. `HTTPS_CERT_PATH` / `HTTPS_KEY_PATH` are typically not set when running in Docker; instead front the container with a reverse proxy (nginx, Caddy, Traefik) that terminates TLS and forwards to port 3000.
+
+### 2. Build the image
+
+From the monorepo root:
+
+```bash
+docker build -f apps/waclaw/Dockerfile -t waclaw .
+```
+
+### 3. Run the container
+
+```bash
+docker run -d \
+  --name waclaw \
+  -p 3000:3000 \
+  --env-file apps/waclaw/.env \
+  -v waclaw-data:/app/data \
+  waclaw
+```
+
+The `waclaw-data` named volume persists the SQLite database across container restarts and image upgrades.
+
+### 4. Configure the Meta webhook
+
+Same as step 7 above — point the Meta webhook at your public HTTPS endpoint, which proxies to the container's port 3000.

@@ -1,0 +1,14 @@
+.git
+.github
+.vscode
+.claude
+.superset
+**/.turbo
+**/dist
+**/node_modules
+**/data
+**/.env*
+**/Dockerfile*
+**/*.dockerignore
+**/README.md
+**/tsconfig*.json
