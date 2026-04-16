@@ -25,9 +25,12 @@ RUN bun run build
 # Run as root so any orchestrator-managed volume mounted at /app/data is
 # writable regardless of how it was created (named volume, bind mount, PaaS
 # persistent storage). Container isolation is the security boundary here.
-FROM gcr.io/distroless/base-debian12 AS release
+# Using the `:debug` variant for the bundled busybox (wget) used by HEALTHCHECK.
+FROM gcr.io/distroless/base-debian12:debug AS release
 WORKDIR /app
 COPY --from=build /monorepo/apps/waclaw/dist/ ./
 ENV NODE_ENV=production
 EXPOSE 3000/tcp
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/busybox/wget", "-q", "--spider", "http://localhost:3000/health"]
 ENTRYPOINT ["/app/server"]
