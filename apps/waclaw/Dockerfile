@@ -21,15 +21,13 @@ COPY apps/waclaw apps/waclaw
 WORKDIR /monorepo/apps/waclaw
 ENV NODE_ENV=production
 RUN bun run build
-# Pre-create the data dir here so the release stage can COPY it with the
-# correct ownership. Distroless has no shell, so the dir must be staged from
-# a layer that does — without this, a named volume mounted at /app/data would
-# initialize as root and the nonroot binary couldn't write to it.
-RUN mkdir -p dist/data
 
-FROM gcr.io/distroless/base-debian12:nonroot AS release
+# Run as root so any orchestrator-managed volume mounted at /app/data is
+# writable regardless of how it was created (named volume, bind mount, PaaS
+# persistent storage). Container isolation is the security boundary here.
+FROM gcr.io/distroless/base-debian12 AS release
 WORKDIR /app
-COPY --from=build --chown=nonroot:nonroot /monorepo/apps/waclaw/dist/ ./
+COPY --from=build /monorepo/apps/waclaw/dist/ ./
 ENV NODE_ENV=production
 EXPOSE 3000/tcp
 ENTRYPOINT ["/app/server"]
